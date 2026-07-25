@@ -14,7 +14,7 @@
 
 ## The server
 
-It's kinda braindead. I use archiver.sh to create the files. I serve them with an nginx configured like this:
+It's kinda braindead. I use archiver.sh to create the files. I serve them with nginx configured like this:
 
 ```
 	root /var/www/mist;
