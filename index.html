@@ -1950,7 +1950,7 @@ const Patch_Definitions = [
             return `0x${Value.toString(16)}`;
         },
         Param: {
-            Type: 'hex', Default: 0x37000, Label: 'Size', Note: 'multiple of 0x1000',
+            Type: 'hex', Default: 0x37000, Label: 'Size', Note: 'multiple of 0x1000, maximum of 0x40000',
             Validate: (Value) => Value > 0 && (Value & 0xFFF) === 0,
         },
     },
