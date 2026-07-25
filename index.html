@@ -1,0 +1,2539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MistPatcher: DQMJ2P Translation</title>
+<script src="/library/jszip.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0 }
+  body {
+    font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+    max-width: 860px; margin: 0 auto; padding: 1.2em 1em 3em;
+    color: #e0e0e0; background: #000; line-height: 1.5;
+  }
+  h1  { color: #81d4c3; font-size: 1.5em; margin-bottom: .15em }
+  h3  { margin: 0 0 .5em; font-size: .95em; color: #ccc }
+  .sub { color: #888; font-size: .85em }
+  .card {
+    background: #0a0a0a; border: 1px solid #1a1a1a;
+    border-radius: 8px; padding: .8em 1em; margin-bottom: .8em;
+  }
+  .card-sm { padding: .6em .8em }
+  .top-row { display: grid; grid-template-columns: 1fr 1fr; gap: .8em }
+  .row {
+    display: flex; align-items: center; gap: .5em;
+    padding: .3em 0; flex-wrap: wrap;
+  }
+  .row.req label { color: #789 }
+  .param {
+    margin-left: auto; display: flex; align-items: center;
+    gap: .4em; font-size: .85em;
+  }
+  input[type=text], input[type=number], select {
+    background: #111; color: #e0e0e0; border: 1px solid #2a2a2a;
+    border-radius: 4px; padding: 2px 6px; font-size: .85em; font-family: inherit;
+  }
+  input[type=number] { width: 5em }
+  input[type=text]   { width: 7.5em }
+  input[type=file]   { color: #999; font-size: .82em; max-width: 100% }
+  label { cursor: pointer; user-select: none; font-size: .92em }
+  button {
+    padding: .6em 2em; font-size: 1em; border: none; border-radius: 6px;
+    cursor: pointer; background: #81d4c3; color: #000; font-weight: 700;
+    transition: opacity .15s;
+  }
+  button:hover:not(:disabled) { opacity: .85 }
+  button:disabled { opacity: .3; cursor: default }
+  #log {
+    white-space: pre-wrap; background: #050505; color: #6ec89b;
+    padding: .8em;
+    font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+    font-size: 12px; height: 280px; overflow-y: auto;
+    border-radius: 6px; margin-top: .8em; border: 1px solid #1a1a1a;
+  }
+  #log a.dl { color: #81d4c3; font-weight: 700; text-decoration: underline }
+  .note   { font-size: .78em; color: #666 }
+  .note a { color: #81d4c3 }
+  .warn   { background: #1a0a0a; border-color: #fa5f5f40; color: #fa5f5f }
+  .warn b { color: #ff8080 }
+  .file-info  { font-size: .78em; color: #666; margin-top: .25em; min-height: 1.1em }
+  .patch-grid { display: grid; gap: 0 }
+  input[type=checkbox], input[type=radio] { accent-color: #81d4c3 }
+  /* tabs */
+  .tabs { display: flex; gap: .4em; margin-bottom: 0 }
+  .tab-btn {
+    padding: .45em 1.1em; background: #0a0a0a; border: 1px solid #1a1a1a;
+    border-bottom: none; border-radius: 6px 6px 0 0; color: #999;
+    cursor: pointer; font-weight: 600; font-size: .9em; user-select: none;
+  }
+  .tab-btn.active { background: #0a0a0a; color: #81d4c3; border-color: #81d4c3 #81d4c3 transparent }
+  .tab-host { border-top-left-radius: 0 }
+  .tab-panel { display: none }
+  .tab-panel.active { display: block }
+  .rand-head { margin-top: .75em; color: #81d4c3; font-weight: 600; font-size: .9em }
+  .rand-sublabel { font-size: .8em; color: #888; margin-top: .35em }
+  @media (max-width: 600px) { .top-row { grid-template-columns: 1fr } }
+  .prow { display: flex; align-items: center; gap: .5em; padding: .3em 0 }
+  .prow.req > label { color: #789 }
+  .prow .grow { flex: 1 1 auto; min-width: .5em }
+  .prow .note {
+    flex: 0 1 auto; text-align: right;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .prow .param {
+    flex: 0 0 10em;
+    margin-left: 0;
+    display: flex; align-items: center; justify-content: flex-end; gap: .35em;
+    font-size: .85em; color: #789;
+  }
+  .prow .param input[type=number] { width: 4.2em }
+  .prow .param input[type=text]   { width: 6.2em }
+  .prow .param select             { font-size: .82em }
+
+  .tl-card { position: relative; padding-bottom: 1.5em }
+  .tl-main { font-size: .88em; min-height: 1.35em }
+  .tl-main .ver {
+    font-family: ui-monospace, Consolas, monospace;
+    color: #81d4c3; font-weight: 700;
+  }
+  .tl-main.err  { color: #fa5f5f }
+  .tl-main.busy { color: #888 }
+  .icon-btn {
+    position: absolute; right: .5em; bottom: .4em;
+    padding: .22em .45em; font-size: .75em; font-weight: 400;
+    background: #111; color: #789; border: 1px solid #2a2a2a;
+    border-radius: 5px; display: inline-flex; align-items: center; gap: .3em;
+  }
+  .icon-btn:hover:not(:disabled) { color: #81d4c3; border-color: #81d4c3; opacity: 1 }
+  .tl-reset {
+    background: none; border: none; padding: 0; font: inherit;
+    font-size: .78em; color: #81d4c3; text-decoration: underline;
+    font-weight: 400; cursor: pointer;
+  }
+
+  @media (max-width: 600px) {
+    .prow { flex-wrap: wrap }
+    .prow .note  { white-space: normal; text-align: left; flex: 1 1 100%; order: 3 }
+    .prow .param { flex: 0 0 auto; order: 4 }
+  }
+</style>
+</head>
+<body>
+<div class="card" style="color: #98fabe; border-color: #73c4b3; margin-bottom: .8em;">
+	<h3 style="color: #98fabe;">Dragon Quest Monsters: Joker 2 Professional Web Patcher</h3>
+	<div style="font-size: .9em; font-weight: 500; margin-top: .2em;">Made with &lt;3 by Ceris</div>
+</div>
+<div class="top-row">
+  <div class="card card-sm">
+    <h3>ROM</h3>
+    <input type="file" id="romFile" accept=".nds,.NDS">
+    <div class="file-info" id="romInfo"></div>
+  </div>
+    <div class="card card-sm tl-card">
+    <h3>Translation Archive</h3>
+    <div class="tl-main busy" id="tlMain">Checking&hellip;</div>
+    <div class="file-info" id="tlSub"></div>
+    <input type="file" id="translationFile" accept=".zip" hidden>
+    <button type="button" class="icon-btn" id="tlUpload"
+            title="Use a local .zip instead of the server copy">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 16V4"/><path d="M7 9l5-5 5 5"/>
+        <path d="M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2"/>
+      </svg>
+    </button>
+  </div>
+</div>
+<div class="tabs">
+  <div class="tab-btn active" data-tab="patches">Patches</div>
+  <div class="tab-btn" data-tab="randomizer">Randomizer</div>
+</div>
+<div class="card tab-host">
+  <div id="tab-patches" class="tab-panel active">
+    <div id="patchList" class="patch-grid"></div>
+  </div>
+  <div id="tab-randomizer" class="tab-panel">
+    <div id="randomizerList"></div>
+  </div>
+</div>
+<div class="card warn" style="margin-bottom:.8em;font-size:.85em">
+  <b>Note:</b> Rebuilding the ROM in the browser requires ~512MB of RAM. This may fail on mobile devices.
+</div>
+<button id="applyBtn" disabled>Build ROM</button>
+<div id="log"></div>
+<script type="module">
+// Constants
+const ARM9_BaseAddress     = 0x02000000;
+const ARM9_PlainTextSize   = 0x4000;
+const ARM9_ModParamsOffset = 0xB68;
+const ARM9_CompEndField    = 0x14;
+const Overlay_RAMBase      = 0x021D7240;
+const Nitro_Trailer = Uint8Array.from([
+    0x21, 0x06, 0xC0, 0xDE,
+    0x68, 0x0B, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+]);
+const WASM_Directory = 'wasm';
+
+// Byte Helpers
+function Byte_Read32(Data, Offset) {
+    return (
+          Data[Offset]
+        | (Data[Offset + 1] << 8)
+        | (Data[Offset + 2] << 16)
+        | (Data[Offset + 3] << 24)
+    ) >>> 0;
+}
+function Byte_Write32(Data, Offset, Value) {
+    Data[Offset]     =  Value         & 0xFF;
+    Data[Offset + 1] = (Value >>> 8)  & 0xFF;
+    Data[Offset + 2] = (Value >>> 16) & 0xFF;
+    Data[Offset + 3] = (Value >>> 24) & 0xFF;
+}
+function Byte_ArrayEquals(ArrayA, ArrayB) {
+    if (ArrayA.length !== ArrayB.length) return false;
+    for (let i = 0; i < ArrayA.length; i++) {
+        if (ArrayA[i] !== ArrayB[i]) return false;
+    }
+    return true;
+}
+function Hex_ToBytes(Text) {
+    return Uint8Array.from(Text.replace(/\s+/g, '').match(/../g).map(h => parseInt(h, 16)));
+}
+function ARM_EncodeMovImmediate(Register, Value) {
+    for (let Rotation = 0; Rotation < 16; Rotation++) {
+        const Rotated = Rotation
+            ? (((Value << (2 * Rotation)) | (Value >>> (32 - 2 * Rotation))) >>> 0)
+            : Value;
+        if (Rotated <= 0xFF) {
+            return (0xE3A00000 | (Register << 12) | (Rotation << 8) | Rotated) >>> 0;
+        }
+    }
+    throw new Error(`0x${Value.toString(16)} not ARM rotated-imm8 encodable`);
+}
+function ARM_EncodeBranchLink(SourceAddress, TargetAddress) {
+    return (0xEB000000 | (((TargetAddress - SourceAddress - 8) >>> 2) & 0xFFFFFF)) >>> 0;
+}
+
+// WASM junk
+async function WASM_CreateModule(Factory) {
+    const Logs = [];
+    const Module = await Factory({
+        locateFile: (FileName) => `${WASM_Directory}/${FileName}`,
+        print:      (Text)     => Logs.push(Text),
+        printErr:   (Text)     => Logs.push(Text),
+    });
+    Module._logs = Logs;
+    return Module;
+}
+function WASM_CallSafe(Module, Arguments) {
+    try {
+        return Module.callMain(Arguments) ?? 0;
+    } catch (CaughtError) {
+        if (CaughtError && typeof CaughtError === 'object' && 'status' in CaughtError) {
+            return CaughtError.status;
+        }
+        throw CaughtError;
+    }
+}
+let WASM_NDSToolInstance = null;
+async function WASM_GetNDSTool() {
+    if (!WASM_NDSToolInstance) {
+        const { default: Creator } = await import(`./${WASM_Directory}/ndstool.mjs`);
+        WASM_NDSToolInstance = await WASM_CreateModule(Creator);
+    }
+    return WASM_NDSToolInstance;
+}
+let WASM_BLZInstance = null;
+async function WASM_GetBLZ() {
+    if (!WASM_BLZInstance) {
+        const { default: Creator } = await import(`./${WASM_Directory}/blz.mjs`);
+        WASM_BLZInstance = await WASM_CreateModule(Creator);
+    }
+    return WASM_BLZInstance;
+}
+
+// memfs junk
+function MEMFS_RemoveRecursive(FS, Path) {
+    let Stats;
+    try { Stats = FS.stat(Path); } catch { return; }
+    if (FS.isDir(Stats.mode)) {
+        for (const Name of FS.readdir(Path)) {
+            if (Name === '.' || Name === '..') continue;
+            const ChildPath = Path === '/' ? '/' + Name : Path + '/' + Name;
+            MEMFS_RemoveRecursive(FS, ChildPath);
+        }
+        try { FS.rmdir(Path); } catch {}
+    } else {
+        try { FS.unlink(Path); } catch {}
+    }
+}
+function MEMFS_MakeDirectorySafe(FS, Path) {
+    try { FS.mkdir(Path); } catch {}
+}
+async function MEMFS_StreamFileToFS(FS, File, DestPath) {
+    const Stream   = FS.open(DestPath, 'w');
+    const Reader   = File.stream().getReader();
+    let   Position = 0;
+    try {
+        for (;;) {
+            const { done: IsDone, value: Chunk } = await Reader.read();
+            if (IsDone) break;
+            FS.write(Stream, Chunk, 0, Chunk.length, Position);
+            Position += Chunk.length;
+        }
+    } finally {
+        FS.close(Stream);
+    }
+    return Position;
+}
+async function MEMFS_ReadToBlob(FS, SourcePath) {
+    const FileSize       = FS.stat(SourcePath).size;
+    const ChunkSize      = 8 * 1024 * 1024;
+    const FileDescriptor = FS.open(SourcePath, 'r');
+    const Parts          = [];
+    try {
+        for (let Position = 0; Position < FileSize; Position += ChunkSize) {
+            const BytesToRead = Math.min(ChunkSize, FileSize - Position);
+            const Buffer      = new Uint8Array(BytesToRead);
+            FS.read(FileDescriptor, Buffer, 0, BytesToRead, Position);
+            Parts.push(Buffer);
+            await UI_Yield();
+        }
+    } finally {
+        FS.close(FileDescriptor);
+    }
+    return new Blob(Parts, { type: 'application/octet-stream' });
+}
+function MEMFS_BuildFileMap(FS, RootPath) {
+    const FileMap = new Map();
+    (function Walk(Directory) {
+        let Names;
+        try { Names = FS.readdir(Directory); } catch { return; }
+        for (const Name of Names) {
+            if (Name === '.' || Name === '..') continue;
+            const FullPath = Directory + '/' + Name;
+            let Stats;
+            try { Stats = FS.stat(FullPath); } catch { continue; }
+            if (FS.isDir(Stats.mode)) {
+                Walk(FullPath);
+            } else {
+                let Entries = FileMap.get(Name);
+                if (!Entries) {
+                    Entries = [];
+                    FileMap.set(Name, Entries);
+                }
+                Entries.push(FullPath);
+            }
+        }
+    })(RootPath);
+    return FileMap;
+}
+const UI_Yield = () => new Promise(Resolve => setTimeout(Resolve, 0));
+
+// BLZ junk
+async function BLZ_Run(Flag, InputData) {
+    const BLZModule = await WASM_GetBLZ();
+    BLZModule._logs.length = 0;
+    try { BLZModule.FS.unlink('/w.bin'); } catch {}
+    BLZModule.FS.writeFile('/w.bin', InputData);
+    const ReturnCode = WASM_CallSafe(BLZModule, [Flag, '/w.bin']);
+    if (ReturnCode !== 0) {
+        throw new Error(
+            `blz ${Flag} failed (rc=${ReturnCode})\n${BLZModule._logs.join('\n')}`
+        );
+    }
+    const OutputData = BLZModule.FS.readFile('/w.bin');
+    BLZModule.FS.unlink('/w.bin');
+    return OutputData;
+}
+const BLZ_Decompress = (Data) => BLZ_Run('-d',  Data);
+const BLZ_Compress   = (Data) => BLZ_Run('-eo', Data);
+async function ARM9_Decompress(ARM9Binary) {
+    const RawData      = new Uint8Array(ARM9Binary);
+    const Tail         = RawData.subarray(RawData.length - Nitro_Trailer.length);
+    const DataToDecomp = Byte_ArrayEquals(Tail, Nitro_Trailer)
+        ? RawData.subarray(0, RawData.length - Nitro_Trailer.length)
+        : RawData;
+    return new Uint8Array(await BLZ_Decompress(DataToDecomp));
+}
+async function ARM9_Compress(DecompressedData) {
+    const Prefix         = new Uint8Array(DecompressedData.subarray(0, ARM9_PlainTextSize));
+    const CompressedBody = await BLZ_Compress(DecompressedData.subarray(ARM9_PlainTextSize));
+    Byte_Write32(
+        Prefix,
+        ARM9_ModParamsOffset + ARM9_CompEndField,
+        ARM9_BaseAddress + ARM9_PlainTextSize + CompressedBody.length
+    );
+    const Output = new Uint8Array(
+        Prefix.length + CompressedBody.length + Nitro_Trailer.length
+    );
+    Output.set(Prefix, 0);
+    Output.set(CompressedBody, Prefix.length);
+    Output.set(Nitro_Trailer, Prefix.length + CompressedBody.length);
+    return Output;
+}
+
+// The fun stuff
+function Overlay_UpdateY9(Y9Data, OverlayID, CompressedSize) {
+    Byte_Write32(Y9Data, OverlayID * 32 + 28, 0x01000000 | (CompressedSize & 0xFFFFFF));
+}
+function Font_PatchPolarityIcons(NFTRData, Tiles) {
+    const CellSize   = 96;
+    let   PLGCOffset = -1;
+    for (let i = 0; i <= NFTRData.length - 4; i++) {
+        if (NFTRData[i]     === 0x50 &&
+            NFTRData[i + 1] === 0x4C &&
+            NFTRData[i + 2] === 0x47 &&
+            NFTRData[i + 3] === 0x43) {
+            PLGCOffset = i;
+            break;
+        }
+    }
+    if (PLGCOffset < 0) return null;
+    const TileBase = PLGCOffset + 0x10;
+    const Output   = new Uint8Array(NFTRData);
+    for (const [GlyphIndex, TileData] of Object.entries(Tiles)) {
+        Output.set(TileData, TileBase + Number(GlyphIndex) * CellSize);
+    }
+    return Output;
+}
+
+async function Zip_Open(TranslationZipFile) {
+    const ZipArchive = await JSZip.loadAsync(await TranslationZipFile.arrayBuffer());
+    let PathPrefix = '';
+    ZipArchive.forEach((FilePath) => {
+        if (FilePath.endsWith('Translation/STRINGS/MASTER.json')) {
+            PathPrefix = FilePath.replace('Translation/STRINGS/MASTER.json', '');
+        }
+    });
+    const GetEntry = (RelativePath) => ZipArchive.file(PathPrefix + RelativePath);
+    const ReadZipText = async (RelativePath) => {
+        const Entry = GetEntry(RelativePath);
+        if (!Entry) throw new Error(`missing: ${RelativePath}`);
+        return Entry.async('string');
+    };
+    const ReadZipBinary = async (RelativePath) => {
+        const Entry = GetEntry(RelativePath);
+        if (!Entry) throw new Error(`missing: ${RelativePath}`);
+        return Entry.async('uint8array');
+    };
+    const TryZipText = async (RelativePath) => {
+        const Entry = GetEntry(RelativePath);
+        return Entry ? Entry.async('string') : null;
+    };
+    return { ZipArchive, PathPrefix, ReadZipText, ReadZipBinary, TryZipText };
+}
+
+function ASH_Decompress(CompressedBlob) {
+    if (CompressedBlob.length < 0x10 ||
+        CompressedBlob[0] !== 0x41 ||
+        CompressedBlob[1] !== 0x53 ||
+        CompressedBlob[2] !== 0x48 ||
+        CompressedBlob[3] !== 0) {
+        throw new Error('not an ASH blob');
+    }
+    const OutputSize = Byte_Read32(CompressedBlob, 4);
+    if (OutputSize > 16 * 1024 * 1024) {
+        throw new Error('ASH size cap exceeded');
+    }
+    const Output   = new Uint8Array(OutputSize);
+    let SourcePos  = 0x10;
+    let DestPos    = 0;
+    while (DestPos < OutputSize) {
+        const FlagByte = CompressedBlob[SourcePos++];
+        if (FlagByte & 1) {
+            const Packed    = FlagByte | (CompressedBlob[SourcePos++] << 8);
+            const CopyLen   = ((Packed >>> 12) & 0xF) + 3;
+            let   Reference = Math.max(0, DestPos - 0x800) + ((Packed >>> 1) & 0x7FF);
+            for (let i = 0; i < CopyLen; i++) {
+                Output[DestPos++] = Output[Reference++];
+            }
+        } else {
+            const RunLength = FlagByte >>> 1;
+            Output.set(
+                CompressedBlob.subarray(SourcePos, SourcePos + RunLength),
+                DestPos
+            );
+            DestPos   += RunLength;
+            SourcePos += RunLength;
+        }
+    }
+    return Output;
+}
+function ASH_Compress(Data, HashWord = 0, ConstWord = 0x64) {
+    const Body           = [];
+    const RawBuffer      = [];
+    const DataLength     = Data.length;
+    const Chain          = new Map();
+    const MaxChainSearch = 64;
+    function FlushRaw() {
+        let Position = 0;
+        while (Position < RawBuffer.length) {
+            const Count = Math.min(RawBuffer.length - Position, 127);
+            Body.push((Count << 1) & 0xFE);
+            for (let i = 0; i < Count; i++) {
+                Body.push(RawBuffer[Position + i]);
+            }
+            Position += Count;
+        }
+        RawBuffer.length = 0;
+    }
+    function KeyOf(Position) {
+        return (Data[Position] << 16) | (Data[Position + 1] << 8) | Data[Position + 2];
+    }
+    function AddToChain(Position) {
+        if (Position + 3 > DataLength) return;
+        const Key     = KeyOf(Position);
+        let   Entries = Chain.get(Key);
+        if (!Entries) { Entries = []; Chain.set(Key, Entries); }
+        Entries.push(Position);
+    }
+    let SourcePos = 0;
+    while (SourcePos < DataLength) {
+        const MaxMatchLen = Math.min(18, DataLength - SourcePos);
+        let   BestLength  = 0;
+        let   BestOffset  = 0;
+        if (MaxMatchLen >= 3) {
+            const Key         = KeyOf(SourcePos);
+            const WindowStart = SourcePos > 0x800 ? SourcePos - 0x800 : 0;
+            const Candidates  = Chain.get(Key);
+            if (Candidates) {
+                const EndIdx  = Candidates.length - 1;
+                const StopIdx = Math.max(-1, EndIdx - MaxChainSearch);
+                for (let i = EndIdx; i > StopIdx; i--) {
+                    const CandidatePos = Candidates[i];
+                    if (CandidatePos < WindowStart) break;
+                    const Cap = Math.min(MaxMatchLen, SourcePos - CandidatePos);
+                    let MatchLen = 3;
+                    while (MatchLen < Cap &&
+                           Data[CandidatePos + MatchLen] === Data[SourcePos + MatchLen]) {
+                        MatchLen++;
+                    }
+                    if (MatchLen > BestLength) {
+                        BestLength = MatchLen;
+                        BestOffset = CandidatePos - WindowStart;
+                        if (MatchLen === MaxMatchLen) break;
+                    }
+                }
+                if (Candidates.length > MaxChainSearch * 4) {
+                    let CutIndex = Candidates.length;
+                    for (let i = 0; i < Candidates.length; i++) {
+                        if (Candidates[i] >= WindowStart) { CutIndex = i; break; }
+                    }
+                    if (CutIndex > 0) Candidates.splice(0, CutIndex);
+                }
+            }
+        }
+        if (BestLength >= 3) {
+            FlushRaw();
+            const PackedValue =
+                (((BestLength - 3) & 0xF) << 12) |
+                ((BestOffset & 0x7FF) << 1)       |
+                1;
+            Body.push(PackedValue & 0xFF, (PackedValue >>> 8) & 0xFF);
+            for (let k = 0; k < BestLength; k++) AddToChain(SourcePos + k);
+            SourcePos += BestLength;
+        } else {
+            AddToChain(SourcePos);
+            RawBuffer.push(Data[SourcePos++]);
+            if (RawBuffer.length >= 127) FlushRaw();
+        }
+    }
+    FlushRaw();
+    const Output = new Uint8Array(16 + Body.length);
+    Output[0] = 0x41; Output[1] = 0x53; Output[2] = 0x48; Output[3] = 0;
+    Byte_Write32(Output, 4,  DataLength);
+    Byte_Write32(Output, 8,  ConstWord);
+    Byte_Write32(Output, 12, HashWord);
+    for (let i = 0; i < Body.length; i++) Output[16 + i] = Body[i];
+    return Output;
+}
+
+const Translation_TableAddress = 0x020dbc16;
+const Translation_TableCount   = 0x800;
+function Translation_LoadCodepointTable(ARM9Decompressed) {
+    const ByteOffset = Translation_TableAddress - ARM9_BaseAddress;
+    const Table      = new Uint16Array(Translation_TableCount);
+    for (let i = 0; i < Translation_TableCount; i++) {
+        Table[i] =
+            ARM9Decompressed[ByteOffset + i * 2] |
+            (ARM9Decompressed[ByteOffset + i * 2 + 1] << 8);
+    }
+    return Table;
+}
+
+function FPK_Wrap(Header48, Payload) {
+    const HeaderCopy = new Uint8Array(Header48);
+    Byte_Write32(HeaderCopy, 0x2C, Payload.length);
+    let TotalLength = 0x30 + Payload.length;
+    while (TotalLength & 3) TotalLength++;
+    const Output = new Uint8Array(TotalLength);
+    Output.set(HeaderCopy);
+    Output.set(Payload, 0x30);
+    return Output;
+}
+function FPK_BuildMulti(Entries) {
+    const EntryCount   = Entries.length;
+    const DirectorySize = 8 + EntryCount * 40;
+    const DataStart    = (DirectorySize + 3) & ~3;
+    let CurrentOffset = DataStart;
+    const Offsets     = [];
+    for (const Entry of Entries) {
+        Offsets.push(CurrentOffset);
+        CurrentOffset += Entry.Blob.length;
+        while (CurrentOffset & 3) CurrentOffset++;
+    }
+    const Output = new Uint8Array(CurrentOffset);
+    Output[0] = 0x46; Output[1] = 0x50; Output[2] = 0x4B; Output[3] = 0;
+    Byte_Write32(Output, 4, EntryCount);
+    for (let i = 0; i < EntryCount; i++) {
+        const Base      = 8 + i * 40;
+        const NameBytes = new TextEncoder().encode(Entries[i].Name);
+        Output.set(NameBytes.subarray(0, Math.min(32, NameBytes.length)), Base);
+        Byte_Write32(Output, Base + 32, Offsets[i]);
+        Byte_Write32(Output, Base + 36, Entries[i].Blob.length);
+        Output.set(Entries[i].Blob, Offsets[i]);
+    }
+    return Output;
+}
+
+function Message_JoinEntries(EncodedEntries) {
+    let TotalLength = 0;
+    for (let i = 0; i < EncodedEntries.length; i++) {
+        if (i > 0) TotalLength += 2;
+        TotalLength += EncodedEntries[i].length;
+    }
+    TotalLength += 2;
+    const Output = new Uint8Array(TotalLength);
+    let Position = 0;
+    for (let i = 0; i < EncodedEntries.length; i++) {
+        if (i > 0) { Output[Position++] = 0xE3; Output[Position++] = 0x1B; }
+        Output.set(EncodedEntries[i], Position);
+        Position += EncodedEntries[i].length;
+    }
+    Output[Position++] = 0xE3;
+    Output[Position++] = 0x1B;
+    return Output;
+}
+function Message_BuildEncoder(CodepointTable) {
+    const EncodingMap = new Map();
+    for (let ByteValue = 0; ByteValue < 0x100; ByteValue++) {
+        if (ByteValue >= 0xE0 && ByteValue <= 0xE4) continue;
+        const Codepoint = CodepointTable[ByteValue];
+        if (Codepoint && Codepoint !== 0x021C && !EncodingMap.has(Codepoint)) {
+            EncodingMap.set(Codepoint, [ByteValue]);
+        }
+    }
+    for (const [Prefix, BaseIndex] of [[0xE0, 0xE6], [0xE1, 0x118], [0xE4, 0x2AF]]) {
+        for (let Suffix = 0; Suffix < 0x100; Suffix++) {
+            const TableIndex = BaseIndex + Suffix;
+            if (TableIndex >= CodepointTable.length) continue;
+            const Codepoint = CodepointTable[TableIndex];
+            if (Codepoint && Codepoint !== 0x021C && !EncodingMap.has(Codepoint)) {
+                EncodingMap.set(Codepoint, [Prefix, Suffix]);
+            }
+        }
+    }
+    const EscapePattern = /\{([0-9a-fA-F]+)\}/y;
+    return function Message_Encode(Text) {
+        const OutputBytes = [];
+        let i = 0;
+        while (i < Text.length) {
+            EscapePattern.lastIndex = i;
+            const EscapeMatch = EscapePattern.exec(Text);
+            if (EscapeMatch) {
+                const HexStr = EscapeMatch[1];
+                if (HexStr.length === 2) {
+                    OutputBytes.push(parseInt(HexStr, 16));
+                } else if (HexStr.length === 3) {
+                    OutputBytes.push(
+                        0xE0 + parseInt(HexStr[0], 16),
+                        parseInt(HexStr.substring(1), 16)
+                    );
+                } else {
+                    throw new Error(`bad escape {${HexStr}}`);
+                }
+                i = EscapeMatch.index + EscapeMatch[0].length;
+                continue;
+            }
+            const Codepoint = Text.codePointAt(i);
+            const Encoding  = EncodingMap.get(Codepoint);
+            if (!Encoding) {
+                throw new Error(`no msg encoding for U+${Codepoint.toString(16)}`);
+            }
+            for (const ByteVal of Encoding) OutputBytes.push(ByteVal);
+            i += Codepoint > 0xFFFF ? 2 : 1;
+        }
+        return new Uint8Array(OutputBytes);
+    };
+}
+
+function Script_BuildEncoder(CodepointTable) {
+    const EncodingMap = new Map();
+    for (const [Prefix, BaseIndex] of [[0xE4, 0x2AF], [0xE1, 0x118], [0xE0, 0xE6]]) {
+        for (let Suffix = 0; Suffix < 0x100; Suffix++) {
+            const TableIndex = BaseIndex + Suffix;
+            if (TableIndex >= CodepointTable.length) continue;
+            const Codepoint = CodepointTable[TableIndex];
+            if (Codepoint && Codepoint !== 0x021C && !EncodingMap.has(Codepoint)) {
+                EncodingMap.set(Codepoint, [Prefix, Suffix]);
+            }
+        }
+    }
+    for (let ByteValue = 0; ByteValue < 0xE0; ByteValue++) {
+        const Codepoint = CodepointTable[ByteValue];
+        if (Codepoint && Codepoint !== 0x021C) {
+            EncodingMap.set(Codepoint, [ByteValue]);
+        }
+    }
+    return function Script_Encode(Text) {
+        const OutputBytes = [];
+        for (let i = 0; i < Text.length;) {
+            const Codepoint = Text.codePointAt(i);
+            const Encoding  = EncodingMap.get(Codepoint);
+            if (!Encoding) {
+                throw new Error(`no script encoding for U+${Codepoint.toString(16)}`);
+            }
+            for (const ByteVal of Encoding) OutputBytes.push(ByteVal);
+            i += Codepoint > 0xFFFF ? 2 : 1;
+        }
+        return new Uint8Array(OutputBytes);
+    };
+}
+
+const Script_NamedControls = {
+    '{VOICE=03}': [0xE3, 0x03],
+    '{VOICE=07}': [0xE3, 0x07],
+    '{VOICE=08}': [0xE3, 0x08],
+    '{VOICE=09}': [0xE3, 0x09],
+    '{PAGE}':     [0xE3, 0x0C],
+    '{NAME}':     [0xE3, 0x0F],
+    '{WAIT}':     [0xE3, 0x12],
+    '{CLEAR}':    [0xE3, 0x14],
+    '{BREAK}':    [0xE3, 0x15],
+    '{END}':      [0xE3, 0x1B],
+};
+function Script_EncodeSayBody(Text, ScriptEncoder) {
+    const OutputBytes     = [];
+    const NamedTokenRegex = /\{([A-Z]+)(?:=(\d+))?\}/y;
+    const HexEscapeRegex  = /\{([0-9a-fA-F]+)\}/y;
+    let i = 0;
+    while (i < Text.length) {
+        NamedTokenRegex.lastIndex = i;
+        const NamedMatch = NamedTokenRegex.exec(Text);
+        if (NamedMatch) {
+            const TokenName  = NamedMatch[1];
+            const TokenValue = NamedMatch[2];
+            const TokenKey   = TokenValue != null
+                ? `{${TokenName}=${TokenValue}}`
+                : `{${TokenName}}`;
+            if (TokenName === 'COLOR') {
+                if (TokenValue == null) throw new Error('{COLOR=N} needs value');
+                OutputBytes.push(0xE3, 0x1C, parseInt(TokenValue) & 0xFF);
+                i = NamedMatch.index + NamedMatch[0].length;
+                continue;
+            }
+            if (Script_NamedControls[TokenKey]) {
+                OutputBytes.push(...Script_NamedControls[TokenKey]);
+                i = NamedMatch.index + NamedMatch[0].length;
+                continue;
+            }
+            throw new Error(`unknown named token: ${TokenKey}`);
+        }
+        HexEscapeRegex.lastIndex = i;
+        const HexMatch = HexEscapeRegex.exec(Text);
+        if (HexMatch) {
+            const HexStr = HexMatch[1];
+            if (HexStr.length === 2) {
+                OutputBytes.push(parseInt(HexStr, 16));
+            } else if (HexStr.length === 3) {
+                OutputBytes.push(
+                    0xE0 + parseInt(HexStr[0], 16),
+                    parseInt(HexStr.substring(1), 16)
+                );
+            } else if (HexStr.length === 4) {
+                OutputBytes.push(
+                    parseInt(HexStr.substring(0, 2), 16),
+                    parseInt(HexStr.substring(2), 16)
+                );
+            } else {
+                throw new Error(`bad escape {${HexStr}}`);
+            }
+            i = HexMatch.index + HexMatch[0].length;
+            continue;
+        }
+        if (Text[i] === '{') {
+            throw new Error(
+                `unparseable escape at ${i}: ` +
+                `...${Text.substring(Math.max(0, i - 10), i + 25)}...`
+            );
+        }
+        let RunText = '';
+        while (i < Text.length && Text[i] !== '{') RunText += Text[i++];
+        if (RunText) {
+            const Encoded = ScriptEncoder(RunText);
+            for (const ByteVal of Encoded) OutputBytes.push(ByteVal);
+        }
+    }
+    return new Uint8Array(OutputBytes);
+}
+
+const Script_Opcodes = {
+    0x400: ['JMP_REL',    8, 1],
+    0x401: ['NOP_01',     4, 0],
+    0x402: ['RET',        4, 0],
+    0x403: ['NOP_03',     4, 0],
+    0x404: ['NOP_04',     4, 0],
+    0x405: ['NOP_05',     4, 0],
+    0x406: ['NOP_06',     4, 0],
+    0x407: ['NOP_07',     4, 0],
+    0x408: ['NOP_08',     4, 0],
+    0x409: ['CALL_REL',  12, 2],
+    0x40A: ['SPAWN',     12, 2],
+    0x40B: ['WAIT',      16, 3],
+    0x40C: ['JMP_ABS',   12, 2],
+    0x40D: ['JMP_IF',    12, 2],
+    0x40E: ['JMP_IFNOT', 12, 2],
+    0x40F: ['CMP_EQ',    24, 5],
+    0x410: ['CMP_NE',    24, 5],
+    0x411: ['CMP_GT',    24, 5],
+    0x412: ['CMP_LT',    24, 5],
+    0x413: ['CMP_GE',    24, 5],
+    0x414: ['CMP_LE',    24, 5],
+    0x415: ['STORE',     24, 5],
+    0x416: ['MATH_ADD',  32, 7],
+    0x417: ['MATH_SUB',  32, 7],
+    0x418: ['MATH_MUL',  32, 7],
+    0x419: ['MATH_DIV',  32, 7],
+    0x41A: ['MATH_MOD',  32, 7],
+    0x41B: ['BIT_AND',   32, 7],
+    0x41C: ['BIT_OR',    32, 7],
+    0x41D: ['BIT_XOR',   32, 7],
+};
+const Script_OpcodesByMnemonic = {};
+for (const [Code, [Mnemonic, Size, ArgCount]] of Object.entries(Script_Opcodes)) {
+    Script_OpcodesByMnemonic[Mnemonic] = [Number(Code), Size, ArgCount];
+}
+const Script_TextOpcodes    = { SAY: 0x47, SETNAME: 0x87 };
+const Script_RelativeArgs   = { JMP_REL: 0 };
+const Script_EntryTableSize = 0x1000;
+
+function Script_Unquote(QuotedString) {
+    if (QuotedString[0] !== '"' || QuotedString[QuotedString.length - 1] !== '"') {
+        throw new Error(`unquoted: ${QuotedString}`);
+    }
+    const Inner    = QuotedString.slice(1, -1);
+    const EscapeOf = { n: '\n', t: '\t', '"': '"', '\\': '\\' };
+    let Result = '';
+    let i      = 0;
+    while (i < Inner.length) {
+        if (Inner[i] === '\\' && i + 1 < Inner.length) {
+            Result += EscapeOf[Inner[i + 1]] ?? Inner[i + 1];
+            i += 2;
+        } else {
+            Result += Inner[i++];
+        }
+    }
+    return Result;
+}
+function Script_ParseText(SourceText) {
+    let ASHConst = 0x64;
+    let ASHHash  = 0;
+    const Entries      = {};
+    const Instructions = [];
+    let PendingLabels  = [];
+    const LabelRefPattern  = /^L_[0-9a-fA-F]+$/;
+    const LabelDeclPattern = /^(L_[0-9a-fA-F]+):$/;
+    const SayPattern       = /^(SAY|SETNAME)\s+("(?:[^"\\]|\\.)*")(?:\s+pad=\d+)?\s*$/;
+    for (const RawLine of SourceText.split('\n')) {
+        const Line = RawLine.trim();
+        if (!Line || Line[0] === ';' || Line[0] === '#') continue;
+        if (Line.startsWith('ASH')) {
+            const ConstMatch = Line.match(/const=(\S+)/);
+            const HashMatch  = Line.match(/hash=(\S+)/);
+            if (ConstMatch) ASHConst = Number(ConstMatch[1]);
+            if (HashMatch)  ASHHash  = Number(HashMatch[1]);
+            continue;
+        }
+        if (Line.startsWith('ENTRY')) {
+            const Parts = Line.split(/\s+/);
+            Entries[Number(Parts[1])] = Parts[2];
+            continue;
+        }
+        const LabelDeclMatch = LabelDeclPattern.exec(Line);
+        if (LabelDeclMatch) {
+            PendingLabels.push(LabelDeclMatch[1]);
+            continue;
+        }
+        const SayMatch = SayPattern.exec(Line);
+        if (SayMatch) {
+            Instructions.push([
+                SayMatch[1],
+                [Script_Unquote(SayMatch[2])],
+                PendingLabels,
+            ]);
+            PendingLabels = [];
+            continue;
+        }
+        if (Line.startsWith('DATA')) {
+            Instructions.push([
+                'DATA',
+                [Number(Line.split(/\s+/)[1])],
+                PendingLabels,
+            ]);
+            PendingLabels = [];
+            continue;
+        }
+        if (Line.startsWith('SYS_')) {
+            const Parts = Line.split(/\s+/);
+            Instructions.push([
+                Parts[0],
+                [Number(Parts[1]), Parts[2] || ''],
+                PendingLabels,
+            ]);
+            PendingLabels = [];
+            continue;
+        }
+        const Parts = Line.split(/\s+/);
+        if (!Script_OpcodesByMnemonic[Parts[0]]) {
+            throw new Error(`unknown opcode: ${Line}`);
+        }
+        Instructions.push([
+            Parts[0],
+            Parts.slice(1).map(Token =>
+                LabelRefPattern.test(Token) ? Token : Number(Token)
+            ),
+            PendingLabels,
+        ]);
+        PendingLabels = [];
+    }
+    return {
+        ASHConst,
+        ASHHash,
+        Entries,
+        Instructions,
+        Trailing: PendingLabels,
+    };
+}
+
+function Script_Assemble(ParsedScript, ScriptEncoder) {
+    const { Entries, Instructions, Trailing } = ParsedScript;
+    function ComputeInstructionSize(Mnemonic, Arguments) {
+        if (Mnemonic === 'SAY' || Mnemonic === 'SETNAME') {
+            let Body = Script_EncodeSayBody(Arguments[0], ScriptEncoder);
+            if (Body.length < 2 ||
+                Body[Body.length - 2] !== 0xE3 ||
+                Body[Body.length - 1] !== 0x1B) {
+                const Extended = new Uint8Array(Body.length + 2);
+                Extended.set(Body);
+                Extended[Body.length]     = 0xE3;
+                Extended[Body.length + 1] = 0x1B;
+                Body = Extended;
+            }
+            let Advance = 8 + Body.length;
+            if (Advance & 3) Advance = (Advance + 3) & ~3;
+            return [Advance, Body];
+        }
+        if (Mnemonic.startsWith('SYS_')) return [Arguments[0], null];
+        if (Mnemonic === 'DATA')          return [4, null];
+        return [Script_OpcodesByMnemonic[Mnemonic][1], null];
+    }
+    const LabelAddresses  = {};
+    const InstructionPCs  = [];
+    const BodyCache       = {};
+    let   CurrentPC       = 0;
+    for (let i = 0; i < Instructions.length; i++) {
+        const [Mnemonic, Arguments, DeclaredLabels] = Instructions[i];
+        for (const Label of DeclaredLabels) {
+            if (Label in LabelAddresses) throw new Error(`dup label ${Label}`);
+            LabelAddresses[Label] = CurrentPC;
+        }
+        InstructionPCs.push(CurrentPC);
+        const [InstrSize, InstrBody] = ComputeInstructionSize(Mnemonic, Arguments);
+        if (InstrBody) BodyCache[i] = InstrBody;
+        CurrentPC += InstrSize;
+    }
+    for (const Label of Trailing) {
+        if (Label in LabelAddresses) throw new Error(`dup label ${Label}`);
+        LabelAddresses[Label] = CurrentPC;
+    }
+    function ResolveArgument(Argument, PC, IsRelative) {
+        if (typeof Argument === 'string') {
+            const Target = LabelAddresses[Argument];
+            if (Target === undefined) throw new Error(`undefined label ${Argument}`);
+            return (IsRelative ? (Target - PC) : Target) >>> 0;
+        }
+        return Argument >>> 0;
+    }
+    const Bytecode = [];
+    function Emit32(Value) {
+        Bytecode.push(
+             Value         & 0xFF,
+            (Value >>> 8)  & 0xFF,
+            (Value >>> 16) & 0xFF,
+            (Value >>> 24) & 0xFF
+        );
+    }
+    for (let i = 0; i < Instructions.length; i++) {
+        const [Mnemonic, Arguments] = Instructions[i];
+        const PC = InstructionPCs[i];
+        if (Mnemonic === 'SAY' || Mnemonic === 'SETNAME') {
+            const Body = BodyCache[i];
+            let Advance = 8 + Body.length;
+            if (Advance & 3) Advance = (Advance + 3) & ~3;
+            Emit32(Script_TextOpcodes[Mnemonic]);
+            Emit32(Advance);
+            for (const ByteVal of Body) Bytecode.push(ByteVal);
+            for (let j = 0; j < Advance - 8 - Body.length; j++) Bytecode.push(0);
+            continue;
+        }
+        if (Mnemonic.startsWith('SYS_')) {
+            Emit32(parseInt(Mnemonic.substring(4), 16));
+            Emit32(Arguments[0]);
+            const HexPayload = Arguments[1];
+            if (HexPayload) {
+                for (let j = 0; j < HexPayload.length; j += 2) {
+                    Bytecode.push(parseInt(HexPayload.substring(j, j + 2), 16));
+                }
+            }
+            const Padding = Arguments[0] - 8 - (HexPayload ? HexPayload.length / 2 : 0);
+            for (let j = 0; j < Padding; j++) Bytecode.push(0);
+            continue;
+        }
+        if (Mnemonic === 'DATA') {
+            Emit32(Arguments[0] >>> 0);
+            continue;
+        }
+        const [Opcode, InstrSize, ArgCount] = Script_OpcodesByMnemonic[Mnemonic];
+        const RelativeArgIndex = Script_RelativeArgs[Mnemonic] ?? -1;
+        Emit32(Opcode);
+        for (let ArgIdx = 0; ArgIdx < Arguments.length; ArgIdx++) {
+            Emit32(ResolveArgument(Arguments[ArgIdx], PC, ArgIdx === RelativeArgIndex));
+        }
+        for (let j = 4 + ArgCount * 4; j < InstrSize; j++) Bytecode.push(0);
+    }
+    const EntryTable = new Uint8Array(Script_EntryTableSize);
+    EntryTable.fill(0xFF);
+    for (const [Index, Label] of Object.entries(Entries)) {
+        const Target = LabelAddresses[Label];
+        if (Target === undefined) {
+            throw new Error(`ENTRY ${Index} → undef label ${Label}`);
+        }
+        const Offset = Number(Index) * 4;
+        EntryTable[Offset]     =  Target         & 0xFF;
+        EntryTable[Offset + 1] = (Target >>> 8)  & 0xFF;
+        EntryTable[Offset + 2] = (Target >>> 16) & 0xFF;
+        EntryTable[Offset + 3] = (Target >>> 24) & 0xFF;
+    }
+    const Output = new Uint8Array(4 + Script_EntryTableSize + Bytecode.length);
+    Output[0] = 0x53; Output[1] = 0x43; Output[2] = 0x52; Output[3] = 0;
+    Output.set(EntryTable, 4);
+    for (let i = 0; i < Bytecode.length; i++) {
+        Output[4 + Script_EntryTableSize + i] = Bytecode[i];
+    }
+    return Output;
+}
+
+async function Translation_Apply(FS, CodepointTable, Zip, Log) {
+    const { ReadZipText, ReadZipBinary } = Zip;
+    const MessageEncoder = Message_BuildEncoder(CodepointTable);
+    const ScriptEncoder  = Script_BuildEncoder(CodepointTable);
+    const FileMap        = MEMFS_BuildFileMap(FS, '/data');
+    const WriteToFile = (FileName, Data) => {
+        const Paths = FileMap.get(FileName);
+        if (Paths && Paths.length) {
+            FS.writeFile(Paths[0], Data);
+            return true;
+        }
+        return false;
+    };
+
+    let StringsMaster;
+    try {
+        StringsMaster = JSON.parse(
+            await ReadZipText('Translation/STRINGS/MASTER.json')
+        );
+    } catch (CaughtError) {
+        Log(`- STRINGS/MASTER.json: ${CaughtError.message}`);
+        StringsMaster = null;
+    }
+    if (StringsMaster) {
+        const TotalCount     = Object.keys(StringsMaster).length;
+        let   SuccessCount   = 0;
+        let   ProcessedCount = 0;
+        for (const [TextFileName, Info] of Object.entries(StringsMaster)) {
+            try {
+                let Text = await ReadZipText('Translation/STRINGS/' + TextFileName);
+                if (Text.endsWith('\n')) Text = Text.slice(0, -1);
+                const EncodedLines = Text.split('\n').map(
+                    Line => MessageEncoder(Line)
+                );
+                const HeaderData = await ReadZipBinary(
+                    'Translation/STRINGS/' + Info.fpk_header
+                );
+                const WrappedFPK = FPK_Wrap(
+                    HeaderData,
+                    Message_JoinEntries(EncodedLines)
+                );
+                if (WriteToFile(Info.source, WrappedFPK)) {
+                    SuccessCount++;
+                } else {
+                    Log(`- - ${Info.source} not found`);
+                }
+            } catch (CaughtError) {
+                Log(`- - ${TextFileName}: ${CaughtError.message}`);
+            }
+        }
+        Log(`- STRINGS: ${SuccessCount}/${TotalCount}`);
+        await UI_Yield();
+    }
+
+    let ScriptsMaster;
+    try {
+        ScriptsMaster = JSON.parse(
+            await ReadZipText('Translation/SCRIPTS/MASTER.json')
+        );
+    } catch (CaughtError) {
+        Log(`- SCRIPTS/MASTER.json: ${CaughtError.message}`);
+        ScriptsMaster = null;
+    }
+    if (ScriptsMaster) {
+        const TotalCount     = Object.keys(ScriptsMaster).length;
+        let   SuccessCount   = 0;
+        let   ProcessedCount = 0;
+        for (const [FPKFileName, Info] of Object.entries(ScriptsMaster)) {
+            try {
+                const BlobCache = {};
+                for (const Entry of Info.entries) {
+                    if (!Entry.size) continue;
+                    if (Entry.scr && !BlobCache[Entry.scr]) {
+                        const ScriptText = await ReadZipText(
+                            'Translation/SCRIPTS/' + Entry.scr
+                        );
+                        const Parsed = Script_ParseText(ScriptText);
+                        BlobCache[Entry.scr] = ASH_Compress(
+                            Script_Assemble(Parsed, ScriptEncoder),
+                            Parsed.ASHHash,
+                            Parsed.ASHConst
+                        );
+                    }
+                    if (Entry.bin && !BlobCache[Entry.bin]) {
+                        BlobCache[Entry.bin] = await ReadZipBinary(
+                            'Translation/SCRIPTS/_blobs/' + Entry.bin
+                        );
+                    }
+                }
+                const FPKEntries = Info.entries.map(Entry => ({
+                    Name: Entry.name,
+                    Blob: !Entry.size
+                        ? new Uint8Array(0)
+                        : Entry.scr
+                            ? BlobCache[Entry.scr]
+                            : Entry.bin
+                                ? BlobCache[Entry.bin]
+                                : (() => {
+                                    throw new Error(`no scr/bin for ${Entry.name}`);
+                                })(),
+                }));
+                if (WriteToFile(FPKFileName, FPK_BuildMulti(FPKEntries))) {
+                    SuccessCount++;
+                } else {
+                    Log(`- - ${FPKFileName} not found`);
+                }
+            } catch (CaughtError) {
+                Log(`- - ${FPKFileName}: ${CaughtError.message}`);
+            }
+        }
+        Log(`- SCRIPTS: ${SuccessCount}/${TotalCount}`);
+        await UI_Yield();
+    }
+	const SplashDir   = 'Database/GUI_Patcher/GUI/splash/';
+    const SplashFiles = ['warning.chr', 'warning.pal', 'warning_lo.scrn', 'warning_up.scrn'];
+    let SplashCount = 0;
+    for (const Name of SplashFiles) {
+        try {
+            const Data = await ReadZipBinary(SplashDir + Name);
+            if (WriteToFile(Name, Data)) {
+                SplashCount++;
+            } else {
+                Log(`- - ${Name} not present in ROM data`);
+            }
+        } catch (CaughtError) {
+            Log(`- - ${Name}: ${CaughtError.message}`);
+        }
+    }
+    Log(`- splash assets: ${SplashCount}/${SplashFiles.length}`);
+}
+
+async function Apply_GenderIcons(FS, FileMap, Zip, Log) {
+    const IconMapping = {
+        'plus.bin':    594,
+        'minus.bin':   595,
+        'neutral.bin': 596,
+    };
+    const IconTiles   = {};
+    let   IconsLoaded = 0;
+    for (const [FileName, GlyphIndex] of Object.entries(IconMapping)) {
+        try {
+            const TileData = await Zip.ReadZipBinary('Pro_Tools/icon_tiles/' + FileName);
+            if (TileData.length === 96) {
+                IconTiles[GlyphIndex] = TileData;
+                IconsLoaded++;
+            } else {
+                Log(`- - ${FileName}: expected 96 B, got ${TileData.length}`);
+            }
+        } catch (CaughtError) {
+            Log(`- - ${FileName}: ${CaughtError.message}`);
+        }
+    }
+    if (IconsLoaded !== 3) {
+        Log(`- only ${IconsLoaded}/3 icon tiles — skipping`);
+        return;
+    }
+    const FontPaths = FileMap.get('font_16x16.NFTR');
+    if (!FontPaths || !FontPaths.length) {
+        Log('- font_16x16.NFTR not found');
+        return;
+    }
+    const PatchedFont = Font_PatchPolarityIcons(FS.readFile(FontPaths[0]), IconTiles);
+    if (PatchedFont) {
+        FS.writeFile(FontPaths[0], PatchedFont);
+        Log('- polarity icons replaced');
+    } else {
+        Log('- PLGC block not found');
+    }
+}
+
+function Synth_ReadBinaryTable(Data, TableType) {
+    const Records = [];
+    if (TableType === '4g') {
+        for (let Off = 0; Off + 10 <= Data.length; Off += 10) {
+            const Result = Data[Off] | (Data[Off + 1] << 8);
+            if (Result === 0xFFFF) break;
+            Records.push([
+                Data[Off + 2] | (Data[Off + 3] << 8),
+                Data[Off + 4] | (Data[Off + 5] << 8),
+                Data[Off + 6] | (Data[Off + 7] << 8),
+                Data[Off + 8] | (Data[Off + 9] << 8),
+                Result,
+            ]);
+        }
+    } else {
+        for (let Off = 0; Off + 6 <= Data.length; Off += 6) {
+            const Result = Data[Off] | (Data[Off + 1] << 8);
+            if (Result === 0xFFFF) break;
+            Records.push([
+                Data[Off + 2] | (Data[Off + 3] << 8),
+                Data[Off + 4] | (Data[Off + 5] << 8),
+                0, 0, Result,
+            ]);
+        }
+    }
+    return Records;
+}
+function Synth_WriteBinaryTable(Records, TableType) {
+    const Bytes  = [];
+    const Push16 = (V) => { Bytes.push(V & 0xFF, (V >>> 8) & 0xFF); };
+    if (TableType === '4g') {
+        for (const [gp1, gp2, gp3, gp4, result] of Records) {
+            Push16(result); Push16(gp1); Push16(gp2); Push16(gp3); Push16(gp4);
+        }
+        for (let i = 0; i < 5; i++) Push16(0xFFFF);
+    } else {
+        for (const [p1, p2, , , result] of Records) {
+            Push16(result); Push16(p1); Push16(p2);
+        }
+        for (let i = 0; i < 3; i++) Push16(0xFFFF);
+    }
+    return Uint8Array.from(Bytes);
+}
+function Synth_BuildNameIndex(Names) {
+    const Map_ = new Map();
+    Names.forEach((Name, Idx) => {
+        const Trimmed = (Name || '').trim();
+        if (Trimmed) {
+            const Key = Trimmed.toLowerCase();
+            if (!Map_.has(Key)) Map_.set(Key, []);
+            Map_.get(Key).push(Idx);
+        }
+    });
+    return Map_;
+}
+function Synth_ParseMonster(NameToIds, Cell) {
+    Cell = Cell.trim();
+    if (Cell === '') return 0;
+    if (Cell.includes('|')) {
+        const Idx     = Cell.lastIndexOf('|');
+        const IdPart  = Cell.slice(Idx + 1);
+        const Id      = parseInt(IdPart, 10);
+        if (isNaN(Id)) throw new Error(`invalid id in '${Cell}'`);
+        return Id;
+    }
+    const Id = parseInt(Cell, 10);
+    if (!isNaN(Id)) return Id;
+    const Ids = NameToIds.get(Cell.toLowerCase());
+    if (Ids && Ids.length) return Ids[0];
+    throw new Error(`invalid monster '${Cell}'`);
+}
+function Synth_ParseCSVRecords(Text, Names) {
+    const NameToIds = Synth_BuildNameIndex(Names);
+    const Records   = [];
+    for (const RawLine of Text.split(/\r?\n/)) {
+        const Line = RawLine.trim();
+        if (!Line) continue;
+        const Cells = Line.split(',');
+        if (Cells[0].trim().toLowerCase() === 'monster1') continue; // stray header
+        while (Cells.length < 5) Cells.push('');
+        const Ids = [];
+        for (let i = 0; i < 5; i++) Ids.push(Synth_ParseMonster(NameToIds, Cells[i]));
+        Records.push(Ids);
+    }
+    return Records;
+}
+async function Apply_NewSynths(FS, FileMap, Zip, Names, Log) {
+    const Tables = [
+        { File: 'CombinationKindTbl.bin', Csv: 'Database/new_synths_kind.csv', Type: 'kind' },
+        { File: 'Combination4GTbl.bin',  Csv: 'Database/new_synths_4g.csv',   Type: '4g'  },
+    ];
+    for (const T of Tables) {
+        const Paths = FileMap.get(T.File);
+        if (!Paths || !Paths.length) {
+            Log(`- - ${T.File} not found — skipping`);
+            continue;
+        }
+        const CsvText = await Zip.TryZipText(T.Csv);
+        if (CsvText == null) {
+            Log(`- - ${T.Csv} not found — skipping`);
+            continue;
+        }
+        try {
+            const Existing = Synth_ReadBinaryTable(FS.readFile(Paths[0]), T.Type);
+            const Added    = Synth_ParseCSVRecords(CsvText, Names);
+            const Merged   = Existing.concat(Added);
+            FS.writeFile(Paths[0], Synth_WriteBinaryTable(Merged, T.Type));
+            Log(`- - ${T.File}: +${Added.length} recipes (${Merged.length} total)`);
+        } catch (CaughtError) {
+            Log(`- - ${T.File}: ${CaughtError.message}`);
+        }
+    }
+}
+
+class PRNG {
+    constructor(Seed) {
+        this.State = Seed >>> 0;
+        if (this.State === 0) this.State = 0x9E3779B9;
+    }
+    next() {
+        this.State = (this.State + 0x6D2B79F5) | 0;
+        let t = Math.imul(this.State ^ (this.State >>> 15), 1 | this.State);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    }
+    uniform(a, b) { return a + (b - a) * this.next(); }
+    randint(a, b) { return a + Math.floor(this.next() * (b - a + 1)); } // inclusive
+    choice(arr)   { return arr[Math.floor(this.next() * arr.length)]; }
+    shuffle(arr) {
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(this.next() * (i + 1));
+            const t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+        }
+        return arr;
+    }
+}
+function CSV_Parse(Text) {
+    const Rows = [];
+    let Row = [], Field = '', InQuotes = false;
+    for (let i = 0; i < Text.length; i++) {
+        const c = Text[i];
+        if (InQuotes) {
+            if (c === '"') {
+                if (Text[i + 1] === '"') { Field += '"'; i++; }
+                else InQuotes = false;
+            } else Field += c;
+        } else {
+            if (c === '"') InQuotes = true;
+            else if (c === ',') { Row.push(Field); Field = ''; }
+            else if (c === '\n') { Row.push(Field); Rows.push(Row); Row = []; Field = ''; }
+            else if (c === '\r') { /* ignore */ }
+            else Field += c;
+        }
+    }
+    if (Field !== '' || Row.length) { Row.push(Field); Rows.push(Row); }
+    return Rows;
+}
+function Rand_NormName(Name) {
+    return (Name || '').trim().toLowerCase()
+        .replace(/\u2019/g, "'")
+        .replace(/ /g, '')
+        .replace(/-/g, '');
+}
+function Rand_LoadCatalog(CsvText, Names) {
+    const NameToId = new Map();
+    Names.forEach((Name, Id) => {
+        const Trimmed = (Name || '').trim();
+        if (Trimmed) NameToId.set(Rand_NormName(Trimmed), Id);
+    });
+    const Rows = CSV_Parse(CsvText);
+    if (!Rows.length) return new Map();
+    const Headers = Rows[0].map((h, i) =>
+        (i === 0 ? h.replace(/^\uFEFF/, '') : h).trim()
+    );
+    const Catalog = new Map();
+    for (let r = 1; r < Rows.length; r++) {
+        const Row = Rows[r];
+        const Rec = {};
+        Headers.forEach((h, i) => { Rec[h] = (Row[i] ?? '').trim(); });
+        const Name = (Rec['Monster (Eng)'] || '').trim();
+        const Id   = NameToId.get(Rand_NormName(Name));
+        if (!Id) continue;
+        let Family = (Rec['Family'] || '').trim();
+        if (Family === '？？？系' || Family === '???系') Family = '???';
+        Catalog.set(Id, {
+            rank:   (Rec['Rank'] || '').trim().toUpperCase(),
+            family: Family.toLowerCase(),
+            size:   (Rec['Sz.'] || '').trim(),
+        });
+    }
+    return Catalog;
+}
+function Rand_MonsterAllowed(Id, Catalog, Cfg) {
+    if (!Cfg.rankExcludes.size && !Cfg.familyExcludes.size && !Cfg.sizeExcludes.size) return true;
+    const Info = Catalog.get(Id);
+    if (!Info) return false;
+    if (Cfg.rankExcludes.has(Info.rank))     return false;
+    if (Cfg.familyExcludes.has(Info.family)) return false;
+    if (Cfg.sizeExcludes.has(Info.size))     return false;
+    return true;
+}
+function Rand_GetXP(Entry) {
+    return Entry[40] | (Entry[41] << 8) | (Entry[42] << 16);
+}
+function Rand_SetXP(Entry, Xp) {
+    Xp = Math.max(0, Math.min(Math.floor(Xp), 0xFFFFFF));
+    Entry[40] = Xp & 0xFF; Entry[41] = (Xp >>> 8) & 0xFF; Entry[42] = (Xp >>> 16) & 0xFF;
+}
+function Rand_RandomizedXP(Rng, Original) {
+    if (Original <= 0) return 0;
+    const Factor = Rng.uniform(0.5, 2.0);
+    return Math.max(1, Math.min(Math.floor(Original * Factor), 0xFFFFFF));
+}
+function Rand_WeightedChoice(Rng, Weighted) {
+    const Total = Weighted.reduce((s, [w]) => s + w, 0);
+    const Roll  = Rng.uniform(0, Total);
+    let Upto = 0;
+    for (const [w, v] of Weighted) { Upto += w; if (Roll <= Upto) return v; }
+    return Weighted[Weighted.length - 1][1];
+}
+function Rand_BattleMonsters(FS, FileMap, Cfg, Names, Catalog, Rng, Spoiler, Log) {
+    const Paths = FileMap.get('BtlEnmyPrm2.bin');
+    if (!Paths) throw new Error('Missing battle monster table: BtlEnmyPrm2.bin');
+    const Raw = FS.readFile(Paths[0]);
+    const HeaderSize = 8, EntrySize = 100;
+    const BodySize = Raw.length - HeaderSize;
+    if (BodySize % EntrySize !== 0) throw new Error('Invalid BtlEnmyPrm2.bin size');
+    const Num = BodySize / EntrySize;
+    const Entries = [];
+    for (let i = 0; i < Num; i++) {
+        Entries.push(Raw.slice(HeaderSize + i * EntrySize, HeaderSize + (i + 1) * EntrySize));
+    }
+    const Valid = [], Candidates = [];
+    for (let i = 0; i < Num; i++) {
+        const E  = Entries[i];
+        const Id = E[0] | (E[1] << 8);
+        const Xp = Rand_GetXP(E);
+        if (Id <= 0) continue;
+        if (Cfg.removeZeroXp && Xp <= 0) continue;
+        Valid.push(i);
+        if (Rand_MonsterAllowed(Id, Catalog, Cfg)) Candidates.push(i);
+    }
+    if (!Valid.length) throw new Error('No valid battle monster entries found');
+    if (!Candidates.length) throw new Error('No valid candidates after rank/family/size filtering');
+    const Filtered = Candidates.length !== Valid.length;
+    const Pool = Candidates.map(i => Entries[i].slice());
+    let Replacements;
+    if (Filtered) {
+        Replacements = Valid.map(() => Rng.choice(Pool).slice());
+    } else {
+        Replacements = Pool.map(x => x.slice());
+        Rng.shuffle(Replacements);
+    }
+    const SpoilerLines = [];
+    let Changed = 0;
+    for (let k = 0; k < Valid.length; k++) {
+        const Ti        = Valid[k];
+        const OldEntry  = Entries[Ti];
+        const OldId     = OldEntry[0] | (OldEntry[1] << 8);
+        const NewEntry  = Replacements[k].slice();
+        const NewId     = NewEntry[0] | (NewEntry[1] << 8);
+        const OldXp     = Rand_GetXP(OldEntry);
+        const NewXp     = Cfg.randomizeXp ? Rand_RandomizedXP(Rng, OldXp) : OldXp;
+        Rand_SetXP(NewEntry, NewXp);
+        if (Cfg.strongerMonsters) {
+            for (const Off of [48, 50, 52, 54, 56, 58]) {
+                let Stat = NewEntry[Off] | (NewEntry[Off + 1] << 8);
+                Stat = Math.min(Math.floor(Stat * 1.5), 9999);
+                NewEntry[Off] = Stat & 0xFF; NewEntry[Off + 1] = (Stat >>> 8) & 0xFF;
+            }
+        }
+        if (Cfg.allowFleeScout) NewEntry[98] = 0x00;
+        if (Cfg.noFlee)         NewEntry[98] = 0x02;
+        if (!Byte_ArrayEquals(NewEntry, OldEntry)) Changed++;
+        Entries[Ti] = NewEntry;
+        const OldName = (Names[OldId] || `Monster ${OldId}`).trim();
+        const NewName = (Names[NewId] || `Monster ${NewId}`).trim();
+        SpoilerLines.push(
+            `Entry ${String(Ti + 1).padStart(4, '0')}: ${OldName} (${OldId}) -> ${NewName} (${NewId}), ` +
+            `XP ${OldXp} -> ${NewXp}`
+        );
+    }
+    const Out = new Uint8Array(Raw.length);
+    Out.set(Raw.subarray(0, HeaderSize), 0);
+    for (let i = 0; i < Num; i++) Out.set(Entries[i], HeaderSize + i * EntrySize);
+    FS.writeFile(Paths[0], Out);
+    Log(`Randomized battle monster table: ${Valid.length} entries from ${Num} total`);
+    if (Filtered) Log(`Filtered replacement candidate pool: ${Candidates.length} entries`);
+    Log(Cfg.randomizeXp ? 'Randomized battle monster XP' : 'Preserved original battle-entry XP');
+    Log(`Changed battle monster entries: ${Changed}`);
+    if (Cfg.generateSpoiler) {
+        const Header = [
+            '--- Battle Monster Randomisation ---',
+            `BtlEnmyPrm2 entries randomized: ${Valid.length} / ${Num}`,
+            `Replacement candidate pool: ${Candidates.length} entries`,
+            `XP randomisation: ${Cfg.randomizeXp ? 'on' : 'off; original battle-entry XP preserved'}`,
+        ];
+        if (Cfg.rankExcludes.size)   Header.push(`Excluded ranks: ${[...Cfg.rankExcludes].sort().join(', ')}`);
+        if (Cfg.familyExcludes.size) Header.push(`Excluded families: ${[...Cfg.familyExcludes].sort().join(', ')}`);
+        if (Cfg.sizeExcludes.size)   Header.push(`Excluded sizes: ${[...Cfg.sizeExcludes].sort().join(', ')}`);
+        const KeyOf = (Line) => Line.substring(Line.indexOf(': ') + 2).toLowerCase();
+        const ByEntry = ['', '--- By battle entry order ---', ...SpoilerLines];
+        const ByName  = ['', '--- By original monster name ---',
+            ...[...SpoilerLines].sort((a, b) => KeyOf(a).localeCompare(KeyOf(b)))];
+        Spoiler.add([...Header, ...ByEntry, ...ByName].join('\n'));
+    }
+}
+function Rand_BattleXPOnly(FS, FileMap, Cfg, Rng, Spoiler, Log) {
+    const Paths = FileMap.get('BtlEnmyPrm2.bin');
+    if (!Paths) throw new Error('Missing battle monster table: BtlEnmyPrm2.bin');
+    const Out = new Uint8Array(FS.readFile(Paths[0]));
+    const HeaderSize = 8, EntrySize = 100;
+    const BodySize = Out.length - HeaderSize;
+    if (BodySize % EntrySize !== 0) throw new Error('Invalid BtlEnmyPrm2.bin size');
+    const Num = BodySize / EntrySize;
+    let Changed = 0;
+    const Lines = [];
+    for (let i = 0; i < Num; i++) {
+        const Off = HeaderSize + i * EntrySize;
+        const Id  = Out[Off] | (Out[Off + 1] << 8);
+        const OldXp = Out[Off + 40] | (Out[Off + 41] << 8) | (Out[Off + 42] << 16);
+        if (Id <= 0) continue;
+        if (Cfg.removeZeroXp && OldXp <= 0) continue;
+        const NewXp = Rand_RandomizedXP(Rng, OldXp);
+        if (NewXp !== OldXp) Changed++;
+        const V = Math.max(0, Math.min(NewXp, 0xFFFFFF));
+        Out[Off + 40] = V & 0xFF; Out[Off + 41] = (V >>> 8) & 0xFF; Out[Off + 42] = (V >>> 16) & 0xFF;
+        Lines.push(`Entry ${String(i + 1).padStart(4, '0')}: Monster ${Id}, XP ${OldXp} -> ${NewXp}`);
+    }
+    FS.writeFile(Paths[0], Out);
+    Log(`Randomized battle monster XP: ${Changed} entries from ${Num} total`);
+    if (Cfg.generateSpoiler) {
+        Spoiler.add(['', '--- Battle XP Randomisation ---',
+            `BtlEnmyPrm2 XP entries randomized: ${Changed} / ${Num}`, '', ...Lines].join('\n'));
+    }
+}
+function Rand_LevelUp(FS, FileMap, Cfg, Rng, Spoiler, Log) {
+    const Paths = FileMap.get('LevelUpTbl.bin');
+    if (!Paths) throw new Error('LevelUpTbl.bin not found');
+    const Data   = FS.readFile(Paths[0]);
+    const Header = Data.slice(0, 400);
+    const Body   = Data.slice(400);
+    if (Body.length % 400) throw new Error('LevelUpTbl.bin unexpected size');
+    const NCurves = Body.length / 400;
+    let Curves = [];
+    for (let i = 0; i < NCurves; i++) Curves.push(Body.slice(i * 400, (i + 1) * 400));
+    const Lines = [];
+    if (Cfg.levelUpMode === 'swap') {
+        const Before = [...Array(NCurves).keys()];
+        Rng.shuffle(Curves);
+        Lines.push('Level Up XP curve mode: swap');
+        Lines.push(`Curves shuffled: [${Before.join(', ')}]`);
+    } else if (Cfg.levelUpMode === 'random') {
+        const VF = Math.max(100, Math.min(Cfg.levelUpVariance, 300)) / 100.0;
+        Lines.push(`Level Up XP curve mode: random, variance ${Cfg.levelUpVariance}%`);
+        for (let ci = 0; ci < Curves.length; ci++) {
+            const Curve   = Curves[ci];
+            const Amounts = [];
+            for (let j = 0; j < 100; j++) {
+                Amounts.push(
+                    Curve[j * 4] + Curve[j * 4 + 1] * 256 +
+                    Curve[j * 4 + 2] * 65536 + Curve[j * 4 + 3] * 16777216
+                );
+            }
+            const Diffs = [0];
+            for (let j = 0; j < 99; j++) Diffs.push(Amounts[j + 1] - Amounts[j]);
+            const NewAmounts = [];
+            let Total = 0;
+            for (let Level = 0; Level < Diffs.length; Level++) {
+                if (Level === 0) Total = Amounts[0];
+                else {
+                    const Factor = Rng.uniform(2 - VF, VF);
+                    Total = Math.max(Total, Math.floor(Total + Diffs[Level] * Factor));
+                }
+                NewAmounts.push(Total);
+            }
+            const NC = new Uint8Array(400);
+            for (let j = 0; j < 100; j++) {
+                const V = NewAmounts[j];
+                NC[j * 4]     =  V & 0xFF;
+                NC[j * 4 + 1] = Math.floor(V / 256) & 0xFF;
+                NC[j * 4 + 2] = Math.floor(V / 65536) & 0xFF;
+                NC[j * 4 + 3] = Math.floor(V / 16777216) & 0xFF;
+            }
+            Curves[ci] = NC;
+        }
+    } else {
+        throw new Error(`Unknown level up randomiser mode: ${Cfg.levelUpMode}`);
+    }
+    const TotalLen = Header.length + Curves.reduce((s, c) => s + c.length, 0);
+    const Out = new Uint8Array(TotalLen);
+    Out.set(Header, 0);
+    let Pos = Header.length;
+    for (const C of Curves) { Out.set(C, Pos); Pos += C.length; }
+    FS.writeFile(Paths[0], Out);
+    Log(`Randomized LevelUpTbl.bin: mode=${Cfg.levelUpMode}`);
+    if (Cfg.generateSpoiler) {
+        Spoiler.add('\n--- Level Up XP Randomisation ---\n' + Lines.join('\n'));
+    }
+}
+function Rand_SkillPoints(FS, FileMap, Cfg, Rng, Spoiler, Log) {
+    const Paths = FileMap.get('SkillPointTbl.bin');
+    if (!Paths) throw new Error('SkillPointTbl.bin not found');
+    const Data = FS.readFile(Paths[0]);
+    if (Data.length !== 100) throw new Error(`SkillPointTbl.bin unexpected size: ${Data.length}`);
+    let Values = Array.from(Data);
+    if (Cfg.skillPointsMode === 'swap') {
+        Rng.shuffle(Values);
+    } else if (Cfg.skillPointsMode === 'random') {
+        const Weights = [[50.0, 1], [25.0, 5], [12.5, 8], [6.25, 11], [3.125, 15], [3.125, 20]];
+        Values = [];
+        for (let i = 0; i < 100; i++) Values.push(Rand_WeightedChoice(Rng, Weights));
+    } else {
+        throw new Error(`Unknown skill point randomiser mode: ${Cfg.skillPointsMode}`);
+    }
+    FS.writeFile(Paths[0], Uint8Array.from(Values));
+    Log(`Randomized SkillPointTbl.bin: mode=${Cfg.skillPointsMode}`);
+    if (Cfg.generateSpoiler) {
+        const Lines = ['\n--- Skill Point Randomisation ---', `Mode: ${Cfg.skillPointsMode}`];
+        Values.forEach((P, i) => Lines.push(`Level ${i + 1}: ${P} skill points`));
+        Spoiler.add(Lines.join('\n'));
+    }
+}
+async function Rand_GenericSynthesis(FS, Cfg, Rng, Spoiler, Log) {
+    const Ov0Path = '/overlay/overlay_0000.bin';
+    let Exists = true;
+    try { FS.stat(Ov0Path); } catch { Exists = false; }
+    if (!Exists) { Log('- overlay_0000.bin not found — skipping generic synthesis'); return; }
+    const Overlay0Ram = 0x021D7240;
+    const TableRam    = 0x0222E000;
+    const TableOff    = TableRam - Overlay0Ram;
+    const RecordSize  = 6, RecordCount = 42;
+    const FamilyNames = { 1: 'Slime', 2: 'Dragon', 3: 'Nature', 4: 'Beast', 5: 'Material', 6: 'Demon', 7: 'Zombie' };
+    const OriginalSize = FS.stat(Ov0Path).size;
+    const Dec = new Uint8Array(await BLZ_Decompress(FS.readFile(Ov0Path)));
+    const Shift = Rng.randint(40, 96);
+    const PatchArm = (Addr, ExpectedHex, NewBytes) => {
+        const Off      = Addr - Overlay0Ram;
+        const Expected = Hex_ToBytes(ExpectedHex);
+        for (let i = 0; i < Expected.length; i++) {
+            if (Dec[Off + i] !== Expected[i]) {
+                throw new Error(`overlay_0000 patch mismatch at 0x${Addr.toString(16)}`);
+            }
+        }
+        Dec.set(NewBytes, Off);
+    };
+    const Instr = (0xE28A0000 | Shift) >>> 0; // add r0, sl, #shift
+    PatchArm(0x02228FB0, '0a 00 a0 e1', Uint8Array.from([
+        Instr & 0xFF, (Instr >>> 8) & 0xFF, (Instr >>> 16) & 0xFF, (Instr >>> 24) & 0xFF,
+    ]));
+    if (TableOff < 0 || TableOff + (RecordCount + 1) * RecordSize > Dec.length) {
+        throw new Error('Generic synthesis table offset is outside overlay_0000.bin');
+    }
+    for (let i = 0; i < RecordSize; i++) {
+        if (Dec[TableOff + RecordCount * RecordSize + i] !== 0xFF) {
+            throw new Error('Generic synthesis table terminator mismatch');
+        }
+    }
+    const Records = [], Results = [];
+    for (let i = 0; i < RecordCount; i++) {
+        const Off = TableOff + i * RecordSize;
+        const a = Dec[Off]     | (Dec[Off + 1] << 8);
+        const b = Dec[Off + 2] | (Dec[Off + 3] << 8);
+        const r = Dec[Off + 4] | (Dec[Off + 5] << 8);
+        if (!(a >= 1 && a <= 7 && b >= 1 && b <= 7 && r >= 1 && r <= 7)) {
+            throw new Error(`Generic synthesis record ${i} has unexpected values: ${a}, ${b}, ${r}`);
+        }
+        Records.push([Off, a, b, r]);
+        Results.push(r);
+    }
+    const Shuffled = Results.slice();
+    Rng.shuffle(Shuffled);
+    const SpoilerLines = [
+        '--- Generic Synthesis Randomisation ---', '',
+        '--- Generic Synthesis Result Shift ---',
+        `Common selector return shift: +${Shift}`,
+        'Known quirk: some SS display text may appear as X.', '',
+        'Generic family-pair result table:',
+    ];
+    for (let i = 0; i < Records.length; i++) {
+        const [Off, a, b, OldR] = Records[i];
+        const NewR = Shuffled[i];
+        Dec[Off + 4] = NewR & 0xFF; Dec[Off + 5] = (NewR >>> 8) & 0xFF;
+        SpoilerLines.push(`${FamilyNames[a]} + ${FamilyNames[b]}: ${FamilyNames[OldR]} -> ${FamilyNames[NewR]}`);
+    }
+    const Comp = new Uint8Array(await BLZ_Compress(Dec));
+    FS.writeFile(Ov0Path, Comp);
+    if (Comp.length !== OriginalSize) {
+        const Y9 = FS.readFile('/y9.bin');
+        Overlay_UpdateY9(Y9, 0, Comp.length);
+        FS.writeFile('/y9.bin', Y9);
+    }
+    Log(`Randomized generic synthesis family table: ${RecordCount} rules`);
+    if (Cfg.generateSpoiler) Spoiler.add(SpoilerLines.join('\n'));
+}
+function Randomizer_AnySelected(S) {
+    return S.monsters || S.xp ||
+        S.level_up_mode !== 'none' ||
+        S.skill_points_mode !== 'none' ||
+        S.generic_synthesis;
+}
+function Randomizer_Validate(S) {
+    if (!S.enabled || !Randomizer_AnySelected(S)) return null;
+    const Seed = (S.seed || '').trim();
+    if (Seed && isNaN(parseInt(Seed, 10))) return 'Randomizer seed must be a whole number.';
+    if (S.monsters) {
+        if (Object.values(S.ranks).every(v => !v))    return 'At least one monster rank must be allowed.';
+        if (Object.values(S.families).every(v => !v)) return 'At least one monster family must be allowed.';
+        if (Object.values(S.sizes).every(v => !v))    return 'At least one monster size must be allowed.';
+    }
+    if (S.level_up_mode !== 'none') {
+        const V = parseInt(S.level_up_variance, 10);
+        if (isNaN(V))              return 'Level Up XP variance must be a whole number.';
+        if (V < 100 || V > 300)    return 'Level Up XP variance must be between 100 and 300.';
+    }
+    return null;
+}
+function Randomizer_SettingsSummary(S) {
+    return [
+        '', '--- Randomiser Settings ---',
+        `- Battle monsters: ${S.monsters ? 'on' : 'off'}`,
+        `- Battle XP rewards: ${S.xp ? 'on' : 'off'}`,
+        `- Spoiler log: ${S.spoiler ? 'on' : 'off'}`,
+        `- Allow Flee/Scout: ${S.allow_flee ? 'on' : 'off'}`,
+        `- Stronger monsters: ${S.stronger ? 'on' : 'off'}`,
+        `- No flee: ${S.no_flee ? 'on' : 'off'}`,
+        `- Level Up XP mode: ${S.level_up_mode}`,
+        `- Level Up XP variance: ${S.level_up_variance}`,
+        `- Skill Points mode: ${S.skill_points_mode}`,
+        `- Generic synthesis: ${S.generic_synthesis ? 'on' : 'off'}`,
+        '- 0-XP battle entries: always skipped', '',
+    ].join('\n');
+}
+async function Randomizer_Run(FS, FileMap, Zip, Names, State, Log) {
+    let Seed = parseInt((State.seed || '').trim(), 10);
+    if (isNaN(Seed) || Seed === 0) Seed = Math.floor(Math.random() * 999999) + 1;
+    const Rng = new PRNG(Seed);
+    Log('Running DQMJ2P randomizer...');
+    Log(`Seed: ${Seed}`);
+    let Catalog = new Map();
+    for (const P of [
+        'Database/GUI_Patcher/GUI/randomizer/monster_database.csv',
+        'GUI/randomizer/monster_database.csv',
+        'randomizer/monster_database.csv',
+        'monster_database.csv',
+    ]) {
+        const T = await Zip.TryZipText(P);
+        if (T != null) { Catalog = Rand_LoadCatalog(T, Names); break; }
+    }
+    const RankExcludes   = new Set(Object.entries(State.ranks).filter(([, v]) => !v).map(([k]) => k.toUpperCase()));
+    const FamilyExcludes = new Set(Object.entries(State.families).filter(([, v]) => !v).map(([k]) => k.toLowerCase()));
+    const SizeExcludes   = new Set(Object.entries(State.sizes).filter(([, v]) => !v).map(([k]) => String(k)));
+    if (Catalog.size === 0 && (RankExcludes.size || FamilyExcludes.size || SizeExcludes.size)) {
+        Log('- monster_database.csv missing; Cannot filter monsters');
+        RankExcludes.clear(); FamilyExcludes.clear(); SizeExcludes.clear();
+    }
+    const Cfg = {
+        seed: Seed,
+        removeZeroXp: true,
+        randomizeXp: State.xp,
+        strongerMonsters: State.stronger,
+        allowFleeScout: State.allow_flee,
+        noFlee: State.no_flee,
+        levelUpMode: State.level_up_mode,
+        levelUpVariance: parseInt(State.level_up_variance, 10) || 140,
+        skillPointsMode: State.skill_points_mode,
+        rankExcludes: RankExcludes,
+        familyExcludes: FamilyExcludes,
+        sizeExcludes: SizeExcludes,
+        generateSpoiler: State.spoiler,
+    };
+    const Spoiler = {
+        enabled: Cfg.generateSpoiler,
+        parts: [],
+        add(s) { if (this.enabled) this.parts.push(s); },
+    };
+    Spoiler.add(`Randomization Seed: ${Seed}`);
+    Spoiler.add(Randomizer_SettingsSummary(State));
+    if (State.monsters) {
+        Rand_BattleMonsters(FS, FileMap, Cfg, Names, Catalog, Rng, Spoiler, Log);
+    } else if (State.xp) {
+        Rand_BattleXPOnly(FS, FileMap, Cfg, Rng, Spoiler, Log);
+    }
+    if (Cfg.levelUpMode !== 'none') Rand_LevelUp(FS, FileMap, Cfg, Rng, Spoiler, Log);
+    if (State.generic_synthesis)    await Rand_GenericSynthesis(FS, Cfg, Rng, Spoiler, Log);
+    if (Cfg.skillPointsMode !== 'none') Rand_SkillPoints(FS, FileMap, Cfg, Rng, Spoiler, Log);
+    return Cfg.generateSpoiler ? Spoiler.parts.join('\n') + '\n' : null;
+}
+
+const NDS_CommonArgs = [
+    '-9', '/arm9.bin',   '-7', '/arm7.bin',
+    '-y9', '/y9.bin',    '-y7', '/y7.bin',
+    '-d', '/data',       '-y', '/overlay',
+    '-t', '/banner.bin', '-h', '/header.bin',
+];
+const Pipeline_Targets = [
+    { ID: 'arm9', FilePath: '/arm9.bin', Kind: 'arm9', ExtractTable: true, MustExist: true },
+    { ID: 'ov0',  FilePath: '/overlay/overlay_0000.bin', Kind: 'blz', OverlayID: 0 },
+    { ID: 'ov1',  FilePath: '/overlay/overlay_0001.bin', Kind: 'blz', OverlayID: 1, MustExist: true },
+    { ID: 'ov4',  FilePath: '/overlay/overlay_0004.bin', Kind: 'blz', OverlayID: 4 },
+];
+function Pipeline_DumpLogs(Module, Log) {
+    for (const Line of Module._logs) {
+        if (Line.trim()) Log('  │ ' + Line);
+    }
+    Module._logs.length = 0;
+}
+function Path_BaseName(FilePath) {
+    return FilePath.split('/').pop();
+}
+async function Pipeline_Run(ROMFile, PatchOptions, RandomizerState, TranslationFile, Log) {
+    const NDSTool = await WASM_GetNDSTool();
+    const FS      = NDSTool.FS;
+
+    for (const CleanupPath of [
+        '/rom.nds', '/output.nds', '/arm9.bin', '/arm7.bin',
+        '/y9.bin', '/y7.bin', '/header.bin', '/banner.bin',
+        '/data', '/overlay',
+    ]) {
+        MEMFS_RemoveRecursive(FS, CleanupPath);
+    }
+    await UI_Yield();
+
+    Log('Loading translation archive...');
+    const Zip = await Zip_Open(TranslationFile);
+    const NamesText = await Zip.TryZipText('Translation/STRINGS/msg_monstername.txt');
+    const Names = NamesText ? NamesText.split('\n').map(l => l.replace(/\r$/, '')) : [];
+    await MEMFS_StreamFileToFS(FS, ROMFile, '/rom.nds');
+    await UI_Yield();
+
+    Log('Extracting ROM with ndstool...');
+    MEMFS_MakeDirectorySafe(FS, '/data');
+    MEMFS_MakeDirectorySafe(FS, '/overlay');
+    NDSTool._logs.length = 0;
+    NDSTool.ccall('ndstool_reset', null, [], []);
+    let ReturnCode = WASM_CallSafe(NDSTool, ['-x', '/rom.nds', ...NDS_CommonArgs]);
+    Pipeline_DumpLogs(NDSTool, Log);
+    if (ReturnCode !== 0) throw new Error(`ndstool -x failed (rc=${ReturnCode})`);
+    FS.unlink('/rom.nds');
+    await UI_Yield();
+    Log('Building patch files...');
+    let CodepointTable = null;
+    for (const Target of Pipeline_Targets) {
+        const MatchingPatches = Patch_Definitions.filter(
+            PatchDef => PatchDef.Target === Target.ID &&
+                        PatchOptions[PatchDef.Key].On
+        );
+        if (!MatchingPatches.length && !Target.ExtractTable) continue;
+        let FileExists = true;
+        try { FS.stat(Target.FilePath); } catch { FileExists = false; }
+        if (!FileExists) {
+            if (Target.MustExist) {
+                throw new Error(`${Path_BaseName(Target.FilePath)} missing — wrong ROM?`);
+            }
+            if (MatchingPatches.length) {
+                Log(`- ${Path_BaseName(Target.FilePath)} not found — skipping`);
+            }
+            continue;
+        }
+        let DecompressedData = Target.Kind === 'arm9'
+            ? await ARM9_Decompress(FS.readFile(Target.FilePath))
+            : new Uint8Array(await BLZ_Decompress(FS.readFile(Target.FilePath)));
+        if (Target.ExtractTable) {
+            CodepointTable = Translation_LoadCodepointTable(DecompressedData);
+            Log('- codepoint table extracted');
+        }
+        for (const PatchDef of MatchingPatches) {
+            const Result = PatchDef.Apply(
+                DecompressedData,
+                PatchOptions[PatchDef.Key].Value
+            );
+            Log(`- ${PatchDef.Label}${typeof Result === 'string' ? ' → ' + Result : ''}`);
+        }
+        if (!MatchingPatches.length) {
+            DecompressedData = null;
+            continue;
+        }
+        const CompressedData = Target.Kind === 'arm9'
+            ? await ARM9_Compress(DecompressedData)
+            : new Uint8Array(await BLZ_Compress(DecompressedData));
+        FS.writeFile(Target.FilePath, CompressedData);
+        if (Target.OverlayID != null) {
+            const Y9Data = FS.readFile('/y9.bin');
+            Overlay_UpdateY9(Y9Data, Target.OverlayID, CompressedData.length);
+            FS.writeFile('/y9.bin', Y9Data);
+        }
+        Log(`  ${Path_BaseName(Target.FilePath)} → 0x${CompressedData.length.toString(16)}`);
+        DecompressedData = null;
+        await UI_Yield();
+    }
+    Log('Inserting Translation...');
+    await Translation_Apply(FS, CodepointTable, Zip, Log);
+    await UI_Yield();
+    /* ── Phase 3b — data-file operations (icons / synths / randomizer) ── */
+    const DataFileMap = MEMFS_BuildFileMap(FS, '/data');
+    let SpoilerText = null;
+    if (PatchOptions.gender_icons?.On) {
+        Log('- Inserting polarity icons');
+        await Apply_GenderIcons(FS, DataFileMap, Zip, Log);
+    }
+    if (PatchOptions.new_synths?.On) {
+        Log('- Inserting new synthesis recipes');
+        await Apply_NewSynths(FS, DataFileMap, Zip, Names, Log);
+    }
+    if (RandomizerState.enabled && Randomizer_AnySelected(RandomizerState)) {
+        Log('- Applying Randomizer');
+        SpoilerText = await Randomizer_Run(FS, DataFileMap, Zip, Names, RandomizerState, Log);
+    }
+    await UI_Yield();
+    Log('Building ROM with ndstool...');
+    NDSTool._logs.length = 0;
+    NDSTool.ccall('ndstool_reset', null, [], []);
+    ReturnCode = WASM_CallSafe(NDSTool, ['-c', '/output.nds', ...NDS_CommonArgs]);
+    Pipeline_DumpLogs(NDSTool, Log);
+    if (ReturnCode !== 0) throw new Error(`ndstool -c failed (rc=${ReturnCode})`);
+    const OutputFileSize = FS.stat('/output.nds').size;
+    Log(`Output Size: ${(OutputFileSize / 1048576).toFixed(2)} MB`);
+    for (const CleanupPath of [
+        '/arm9.bin', '/arm7.bin', '/y9.bin', '/y7.bin',
+        '/header.bin', '/banner.bin', '/data', '/overlay',
+    ]) {
+        MEMFS_RemoveRecursive(FS, CleanupPath);
+    }
+    await UI_Yield();
+    const OutputBlob = await MEMFS_ReadToBlob(FS, '/output.nds');
+    FS.unlink('/output.nds');
+    return { Rom: OutputBlob, Spoiler: SpoilerText };
+}
+
+const Patch_XPSteps = [1/16, 1/8, 1/4, 1/2, 1, 2, 4, 8, 16, 32, 64, 128, 256];
+function Patch_FormatMultiplier(Value) {
+    return (Value < 1 ? `1/${Math.round(1 / Value)}` : String(Value)) + '×';
+}
+const Patch_Definitions = [
+    {
+        Key:      'grow_msg_pool',
+        Label:    'New message pool size',
+        Required: true,
+        Target:   'arm9',
+        Apply: (Data, Value) => {
+            Byte_Write32(Data, 0x02026EC8 - ARM9_BaseAddress, ARM_EncodeMovImmediate(1, Value));
+            return `0x${Value.toString(16)}`;
+        },
+        Param: {
+            Type: 'hex', Default: 0x37000, Label: 'Size', Note: 'multiple of 0x1000',
+            Validate: (Value) => Value > 0 && (Value & 0xFFF) === 0,
+        },
+    },
+    {
+        Key:    'grow_actionhelp',
+        Label:  'ActionHelp patch',
+        Target: 'ov1',
+        Apply: (Data) => {
+            const BranchLink = ARM_EncodeBranchLink(0x02202B68, 0x0205D9E8);
+            for (const [Offset, Value] of [
+                [0x2B908, 0xE59F202C], [0x2B90C, 0xE59F3024], [0x2B910, 0xE28D100C],
+                [0x2B914, 0xE3A00001], [0x2B918, 0xE3A0C002], [0x2B91C, 0xE58DC000],
+                [0x2B920, 0xE1A00000], [0x2B924, 0xE1A00000], [0x2B928, BranchLink],
+                [0x2B93C, 0x020DB220],
+            ]) {
+                Byte_Write32(Data, Offset, Value);
+            }
+        },
+        Note: 'Currently bugged. Do not enable unless you know what you\'re doing.',
+    },
+    {
+        Key:      'antipiracy',
+        Label:    'Anti-piracy patch',
+        Required: true,
+        Target:   'ov4',
+        Apply: (Data) => {
+            if (Data.length < 0x1F8) throw new Error('overlay_0004 too small');
+            Byte_Write32(Data, 0x150, Byte_Read32(Data, 0x154));
+            Byte_Write32(Data, 0x1F0, Byte_Read32(Data, 0x1F4));
+        },
+    },
+    {
+        Key:       'new_synths',
+        Label:     'Add new synthesis recipes',
+        Target:    'data',
+        DefaultOn: true,
+        Note:      'Adds recipes for otherwise-unobtainable monsters',
+    },
+    {
+        Key:       'gender_icons',
+        Label:     'Replace gender icons with polarity (+/-)',
+        Target:    'data',
+        DefaultOn: true,
+    },
+    {
+        Key:    'xvariant_suffix',
+        Label:  'X / XY variant name fix',
+        Target: 'arm9',
+        Apply: (Data) => {
+            Byte_Write32(Data, 0x02045028 - ARM9_BaseAddress, 0xEAFFFFFF);
+            const InstructionWords = [
+                0xE1A02006, 0xE3A00002, 0xE3A01000, 0xEB00630C,
+                0xE1A01000, 0xE1A00004, 0xEB00631C, 0xE3550000,
+                0x0A000009, 0xE1A00006, 0xEBFFFF4A, 0xE0850000,
+                0xE1A02000, 0xE3A00002, 0xE3A01001, 0xEB006300,
+                0xE1A01000, 0xE1A00004, 0xEB006320,
+            ];
+            InstructionWords.forEach((Word, Index) => {
+                Byte_Write32(Data, 0x0204502C - ARM9_BaseAddress + Index * 4, Word);
+            });
+            for (const [Offset, Value] of [
+                [0x0203507C - ARM9_BaseAddress, 0xE1D510F6],
+                [0x02035080 - ARM9_BaseAddress, 0xE1D520F4],
+                [0x020350A8 - ARM9_BaseAddress, 0xE1D510FE],
+                [0x020350AC - ARM9_BaseAddress, 0xE1D520FC],
+            ]) {
+                Byte_Write32(Data, Offset, Value);
+            }
+        },
+    },
+    {
+        Key:    'xp_mult',
+        Label:  'XP multiplier',
+        Target: 'ov1',
+        Apply: (Data, Value) => {
+            const ShiftAmount = Math.max(-4, Math.min(8, Math.round(Math.log2(Math.max(Value, 1e-9)))));
+            const Instruction = (
+                (0xE084 << 16) | 0x4000 | (Math.abs(ShiftAmount) << 7) | ((ShiftAmount >= 0 ? 0 : 1) << 5)
+            ) >>> 0;
+            Byte_Write32(Data, 0x021E3C4C - Overlay_RAMBase, Instruction);
+            return `×${Math.pow(2, ShiftAmount)}`;
+        },
+        Param: {
+            Type: 'select', Options: Patch_XPSteps, Default: 2, Label: 'Amount',
+            Format: Patch_FormatMultiplier, Note: 'nearest power of 2',
+        },
+    },
+    {
+        Key:    'synthesis_level',
+        Label:  'Change minimum synthesis level',
+        Target: 'ov0',
+        Apply: (Data, Value) => {
+            for (const Offset of [0x048B4C, 0x0494E4, 0x0494EC, 0x049A18]) {
+                Byte_Write32(Data, Offset, (Byte_Read32(Data, Offset) & 0xFFFFFF00) | (Value & 0xFF));
+            }
+            return String(Value);
+        },
+        Param: { Type: 'number', Default: 1, Min: 1, Max: 99, Label: 'Level' },
+    },
+    {
+        Key:    'synthesis_polarity',
+        Label:  'Remove synthesis polarity requirement',
+        Target: 'ov0',
+        Apply: (Data) => {
+            for (const [Offset, Value] of [
+                [0x0484DC, 0xE3A00002], [0x0484F0, 0xE3A00002], [0x0485C4, 0xE3A00002],
+                [0x0485D8, 0xE3A00002], [0x048B54, 0xE3A00002], [0x049484, 0xE3A00002],
+                [0x049498, 0xE3A00000], [0x048530, 0xE3A00000], [0x048B74, 0xE3A00000],
+                [0x04860C, 0xE3A00000], [0x049A2C, 0xE3A01001], [0x0494F4, 0xE3A01001],
+            ]) {
+                Byte_Write32(Data, Offset, Value);
+            }
+        },
+    },
+    {
+        Key:    'scout_offense',
+        Label:  '"Took offense" no longer blocks scouting',
+        Target: 'ov1',
+        Apply: (Data) => { Byte_Write32(Data, 0x021FBAE8 - Overlay_RAMBase, 0xE1A00000); },
+    },
+    {
+        Key:    'scout_penalty',
+        Label:  'Remove "species owned" scouting penalty',
+        Target: 'ov1',
+        Apply: (Data) => { Byte_Write32(Data, 0x021FA3F8 - Overlay_RAMBase, 0xE3A01001); },
+    },
+];
+
+function UI_El(Tag, ClassName) {
+    const E = document.createElement(Tag);
+    if (ClassName) E.className = ClassName;
+    return E;
+}
+const UI_PatchState       = {};
+const UI_PatchListElement = document.getElementById('patchList');
+for (const PatchDef of Patch_Definitions) {
+    const DefaultOn = !!(PatchDef.Required || PatchDef.DefaultOn);
+    const State = {
+        On:    DefaultOn,
+        Value: PatchDef.Param?.Default ?? null,
+    };
+    UI_PatchState[PatchDef.Key] = State;
+
+    const RowElement = UI_El('div', 'prow' + (PatchDef.Required ? ' req' : ''));
+
+    const Checkbox = UI_El('input');
+    Checkbox.type     = 'checkbox';
+    Checkbox.id       = 'cb_' + PatchDef.Key;
+    Checkbox.checked  = DefaultOn;
+    Checkbox.disabled = !!PatchDef.Required;
+    Checkbox.addEventListener('change', () => { State.On = Checkbox.checked; });
+
+    const LabelElement       = UI_El('label');
+    LabelElement.htmlFor     = Checkbox.id;
+    LabelElement.textContent = PatchDef.Label + (PatchDef.Required ? '  (required)' : '');
+
+    RowElement.append(Checkbox, LabelElement, UI_El('div', 'grow'));
+
+    // note comes BEFORE the field slot
+    const NoteText = [PatchDef.Note, PatchDef.Param?.Note].filter(Boolean).join(' · ');
+    const NoteSpan = UI_El('span', 'note');
+    NoteSpan.textContent = NoteText;
+    if (NoteText) NoteSpan.title = NoteText;
+    RowElement.append(NoteSpan);
+
+    // field slot is present on every row, even without a param
+    const ParamSlot = UI_El('div', 'param');
+    RowElement.append(ParamSlot);
+
+    if (PatchDef.Param) {
+        const CaptionSpan = UI_El('span');
+        CaptionSpan.textContent = PatchDef.Param.Label + ':';
+        ParamSlot.append(CaptionSpan);
+
+        if (PatchDef.Param.Type === 'select') {
+            const SelectElement = UI_El('select');
+            for (const OptionValue of PatchDef.Param.Options) {
+                const OptionElement = UI_El('option');
+                OptionElement.value       = OptionValue;
+                OptionElement.textContent = PatchDef.Param.Format
+                    ? PatchDef.Param.Format(OptionValue)
+                    : OptionValue;
+                if (OptionValue === PatchDef.Param.Default) OptionElement.selected = true;
+                SelectElement.append(OptionElement);
+            }
+            SelectElement.addEventListener('change', () => { State.Value = Number(SelectElement.value); });
+            ParamSlot.append(SelectElement);
+        } else if (PatchDef.Param.Type === 'number') {
+            const NumberInput = UI_El('input');
+            NumberInput.type  = 'number';
+            NumberInput.min   = PatchDef.Param.Min;
+            NumberInput.max   = PatchDef.Param.Max;
+            NumberInput.value = PatchDef.Param.Default;
+            NumberInput.addEventListener('change', () => {
+                const ParsedValue = parseInt(NumberInput.value, 10);
+                if (!isNaN(ParsedValue) &&
+                    ParsedValue >= PatchDef.Param.Min &&
+                    ParsedValue <= PatchDef.Param.Max) {
+                    State.Value = ParsedValue;
+                } else {
+                    NumberInput.value = State.Value;
+                }
+            });
+            ParamSlot.append(NumberInput);
+        } else if (PatchDef.Param.Type === 'hex') {
+            const HexInput = UI_El('input');
+            HexInput.type  = 'text';
+            HexInput.value = '0x' + PatchDef.Param.Default.toString(16);
+            HexInput.addEventListener('change', () => {
+                const ParsedValue = parseInt(HexInput.value, 16);
+                if (!isNaN(ParsedValue) && PatchDef.Param.Validate(ParsedValue)) {
+                    State.Value    = ParsedValue;
+                    HexInput.value = '0x' + ParsedValue.toString(16);
+                } else {
+                    HexInput.value = '0x' + State.Value.toString(16);
+                }
+            });
+            ParamSlot.append(HexInput);
+        }
+    }
+
+    UI_PatchListElement.append(RowElement);
+}
+
+const RandomizerState = {
+    enabled: false,
+    seed: '0',
+    monsters: true,
+    spoiler: true,
+    generic_synthesis: false,
+    allow_flee: true,
+    no_flee: false,
+    stronger: false,
+    xp: false,
+    level_up_mode: 'none',
+    level_up_variance: '140',
+    skill_points_mode: 'none',
+    ranks:    { F: true, E: true, D: true, C: true, B: true, A: true, S: true, SS: true },
+    families: { Slime: true, Dragon: true, Nature: true, Beast: true, Material: true, Demon: true, Zombie: true, '???': true },
+    sizes:    { 1: true, 2: true, 3: true },
+};
+const RandomizerControls = [];
+const RandomizerListEl   = document.getElementById('randomizerList');
+function R_Info(Text) {
+    const S = UI_El('span', 'note');
+    S.textContent = ' ⓘ';
+    S.title = Text;
+    S.style.cursor = 'help';
+    S.style.color = '#81d4c3';
+    return S;
+}
+function R_Heading(Parent, Text) {
+    const H = UI_El('div', 'rand-head');
+    H.textContent = Text;
+    Parent.append(H);
+}
+function R_SubLabel(Parent, Text) {
+    const L = UI_El('div', 'rand-sublabel');
+    L.textContent = Text;
+    Parent.append(L);
+}
+function R_Check(Parent, Key, Label, Info) {
+    const Row = UI_El('div', 'row');
+    const CB  = UI_El('input');
+    CB.type = 'checkbox'; CB.id = 'r_' + Key; CB.checked = RandomizerState[Key];
+    CB.addEventListener('change', () => { RandomizerState[Key] = CB.checked; });
+    const LB = UI_El('label'); LB.htmlFor = 'r_' + Key; LB.textContent = Label;
+    Row.append(CB, LB);
+    if (Info) Row.append(R_Info(Info));
+    Parent.append(Row);
+    RandomizerControls.push(CB);
+}
+function R_Radio(Parent, Key, Options) {
+    for (const [Label, Value] of Options) {
+        const Row = UI_El('div', 'row');
+        const RB  = UI_El('input');
+        RB.type = 'radio'; RB.name = 'r_' + Key; RB.value = Value;
+        RB.checked = RandomizerState[Key] === Value;
+        RB.addEventListener('change', () => { if (RB.checked) RandomizerState[Key] = Value; });
+        const LB = UI_El('label'); LB.textContent = Label;
+        Row.append(RB, LB);
+        Parent.append(Row);
+        RandomizerControls.push(RB);
+    }
+}
+function R_TextNum(Parent, Key, Label, Type) {
+    const Row = UI_El('div', 'row');
+    const LB  = UI_El('span');
+    LB.textContent = Label + ':';
+    LB.style.fontSize = '.92em';
+    const Inp = UI_El('input');
+    Inp.type = Type;
+    Inp.value = RandomizerState[Key];
+    Inp.addEventListener('change', () => { RandomizerState[Key] = Inp.value; });
+    Row.append(LB, Inp);
+    Parent.append(Row);
+    RandomizerControls.push(Inp);
+}
+function R_Grid(Parent, Key, Items) {
+    const Row = UI_El('div', 'row');
+    for (const [Value, Label] of Items) {
+        const Wrap = UI_El('label');
+        Wrap.style.marginRight = '.7em';
+        const CB = UI_El('input');
+        CB.type = 'checkbox';
+        CB.checked = RandomizerState[Key][Value];
+        CB.addEventListener('change', () => { RandomizerState[Key][Value] = CB.checked; });
+        Wrap.append(CB, document.createTextNode(' ' + Label));
+        Row.append(Wrap);
+        RandomizerControls.push(CB);
+    }
+    Parent.append(Row);
+}
+
+(function () {
+    const Row = UI_El('div', 'row');
+    const CB  = UI_El('input');
+    CB.type = 'checkbox'; CB.id = 'r_enabled'; CB.checked = RandomizerState.enabled;
+    const LB  = UI_El('label'); LB.htmlFor = 'r_enabled'; LB.textContent = 'Enable Randomiser';
+    LB.style.fontWeight = '700';
+    CB.addEventListener('change', () => {
+        RandomizerState.enabled = CB.checked;
+        const Disabled = !CB.checked;
+        for (const C of RandomizerControls) C.disabled = Disabled;
+    });
+    Row.append(CB, LB, R_Info(
+        'The randomiser naturally introduces game instability. E.g. fighting three slimes ' +
+        '(three enemy slots) may become three 3-slot monsters (nine slots), which can crash ' +
+        'the game. For more stable runs, filter out 3-slot monsters, or flee optional battles.'
+    ));
+    RandomizerListEl.append(Row);
+})();
+R_Heading(RandomizerListEl, 'Monsters');
+R_Check(RandomizerListEl, 'monsters', 'Randomise battle monsters');
+R_Check(RandomizerListEl, 'spoiler', 'Generate spoiler log');
+R_Check(RandomizerListEl, 'generic_synthesis', 'Randomise synthesis recipes',
+    '??? family results are sometimes not synthesisable and may crash when viewed. ' +
+    'If you see synthesis results with no name displayed, avoid selecting/viewing them.');
+R_Check(RandomizerListEl, 'allow_flee', 'Allow Flee/Scout for randomised battles');
+R_Check(RandomizerListEl, 'no_flee', 'No flee challenge');
+R_Check(RandomizerListEl, 'stronger', 'Stronger randomised monsters (150% stats)');
+R_TextNum(RandomizerListEl, 'seed', 'Seed (0 = random)', 'text');
+R_Heading(RandomizerListEl, 'Level Up XP');
+R_Check(RandomizerListEl, 'xp', 'Randomise battle XP rewards');
+R_Radio(RandomizerListEl, 'level_up_mode', [
+    ['Do not randomise level XP', 'none'],
+    ['Swap XP curves', 'swap'],
+    ['Randomise XP curves', 'random'],
+]);
+R_TextNum(RandomizerListEl, 'level_up_variance', 'XP variance % (100–300)', 'number');
+R_Heading(RandomizerListEl, 'Skill Points');
+R_Radio(RandomizerListEl, 'skill_points_mode', [
+    ['Do not randomise skill points', 'none'],
+    ['Swap skill point levels', 'swap'],
+    ['Randomise skill points', 'random'],
+]);
+R_Heading(RandomizerListEl, 'Battle monster replacement filters');
+R_SubLabel(RandomizerListEl, 'Allowed ranks:');
+R_Grid(RandomizerListEl, 'ranks',
+    ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS'].map(r => [r, r]));
+R_SubLabel(RandomizerListEl, 'Allowed families:');
+R_Grid(RandomizerListEl, 'families',
+    ['Slime', 'Dragon', 'Nature', 'Beast', 'Material', 'Demon', 'Zombie', '???'].map(f => [f, f]));
+R_SubLabel(RandomizerListEl, 'Allowed sizes:');
+R_Grid(RandomizerListEl, 'sizes', [['1', '1-slot'], ['2', '2-slot'], ['3', '3-slot']]);
+for (const C of RandomizerControls) C.disabled = !RandomizerState.enabled;
+
+for (const Btn of document.querySelectorAll('.tab-btn')) {
+    Btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(B => B.classList.toggle('active', B === Btn));
+        const Id = Btn.dataset.tab;
+        document.querySelectorAll('.tab-panel').forEach(P =>
+            P.classList.toggle('active', P.id === 'tab-' + Id)
+        );
+    });
+}
+
+const UI_LogElement = document.getElementById('log');
+function UI_Log(Message) {
+    UI_LogElement.appendChild(document.createTextNode(Message + '\n'));
+    UI_LogElement.scrollTop = 1e9;
+}
+let UI_LastDownloadURL = null;
+let UI_LastSpoilerURL  = null;
+function UI_LogDownload(OutputBlob) {
+    if (UI_LastDownloadURL) URL.revokeObjectURL(UI_LastDownloadURL);
+    UI_LastDownloadURL = URL.createObjectURL(OutputBlob);
+    const LinkElement       = document.createElement('a');
+    LinkElement.href        = UI_LastDownloadURL;
+    LinkElement.download    = RandomizerState.enabled && Randomizer_AnySelected(RandomizerState)
+        ? 'DQMJ2P_Patched_Randomised.nds'
+        : 'DQMJ2P_Patched.nds';
+    LinkElement.className   = 'dl';
+    LinkElement.textContent = '⬇  Download patched ROM';
+    UI_LogElement.appendChild(LinkElement);
+    UI_LogElement.appendChild(document.createTextNode('\n'));
+    UI_LogElement.scrollTop = 1e9;
+}
+function UI_LogSpoilerDownload(Text) {
+    if (UI_LastSpoilerURL) URL.revokeObjectURL(UI_LastSpoilerURL);
+    UI_LastSpoilerURL = URL.createObjectURL(new Blob([Text], { type: 'text/plain' }));
+    const LinkElement       = document.createElement('a');
+    LinkElement.href        = UI_LastSpoilerURL;
+    LinkElement.download    = 'randomizer_spoiler.txt';
+    LinkElement.className   = 'dl';
+    LinkElement.textContent = '⬇  Download spoiler log';
+    UI_LogElement.appendChild(LinkElement);
+    UI_LogElement.appendChild(document.createTextNode('\n'));
+    UI_LogElement.scrollTop = 1e9;
+}
+
+/* ── translation archive: /version → /archive?v=<version> ── */
+const Translation = {
+    Version:     null,
+    Blob:        null,
+    BlobVersion: null,
+    ManualFile:  null,
+};
+
+const UI_ROMInput         = document.getElementById('romFile');
+const UI_TranslationInput = document.getElementById('translationFile');
+const UI_ApplyButton      = document.getElementById('applyBtn');
+const UI_TLMain           = document.getElementById('tlMain');
+const UI_TLSub            = document.getElementById('tlSub');
+const UI_TLUpload         = document.getElementById('tlUpload');
+
+function UI_FormatBytes(Bytes) {
+    return Bytes >= 1048576
+        ? (Bytes / 1048576).toFixed(1) + ' MB'
+        : Math.round(Bytes / 1024) + ' KB';
+}
+
+function Translation_Render() {
+    UI_TLMain.className  = 'tl-main';
+    UI_TLSub.textContent = '';
+
+    if (Translation.ManualFile) {
+        const F = Translation.ManualFile;
+        UI_TLMain.textContent = 'Local file';
+        UI_TLSub.textContent  = `${F.name} — ${UI_FormatBytes(F.size)} · `;
+        const Reset = UI_El('button', 'tl-reset');
+        Reset.type        = 'button';
+        Reset.textContent = 'use server copy';
+        Reset.addEventListener('click', () => {
+            Translation.ManualFile    = null;
+            UI_TranslationInput.value = '';
+            Translation_Render();
+            UI_UpdateApplyButton();
+        });
+        UI_TLSub.append(Reset);
+    } else if (Translation.Version) {
+        UI_TLMain.textContent = '';
+        UI_TLMain.append(document.createTextNode('Version '));
+        const VerSpan = UI_El('span', 'ver');
+        VerSpan.textContent = Translation.Version.length > 12
+            ? Translation.Version.slice(0, 7)
+            : Translation.Version;
+        VerSpan.title = Translation.Version;
+        UI_TLMain.append(VerSpan);
+    } else {
+        UI_TLMain.className   = 'tl-main err';
+        UI_TLMain.textContent = 'Server copy unavailable';
+        UI_TLSub.textContent  = 'Upload a .zip manually →';
+    }
+}
+
+async function Translation_LoadVersion() {
+    try {
+        const Response = await fetch('/version', { cache: 'no-store' });
+        if (!Response.ok) throw new Error('HTTP ' + Response.status);
+        const Version = (await Response.text()).trim();
+        if (!Version) throw new Error('empty version');
+        Translation.Version = Version;
+    } catch (CaughtError) {
+        console.error('version check failed', CaughtError);
+        Translation.Version = null;
+    }
+    Translation_Render();
+    UI_UpdateApplyButton();
+    return Translation.Version;
+}
+
+async function Translation_Acquire(Log) {
+    if (Translation.ManualFile) {
+        Log(`Using uploaded archive: ${Translation.ManualFile.name}`);
+        return Translation.ManualFile;
+    }
+    const Version = Translation.Version ?? await Translation_LoadVersion();
+    if (!Version) {
+        throw new Error('Could not reach the translation server — upload a .zip manually.');
+    }
+    if (Translation.Blob && Translation.BlobVersion === Version) {
+        Log(`Translation archive ${Version} already loaded.`);
+        return Translation.Blob;
+    }
+
+    Log(`Pulling archive from server (${Version})...`);
+    const Response = await fetch(`/archive/${Version}.zip`);
+    if (!Response.ok) throw new Error(`/archive → HTTP ${Response.status}`);
+
+    let Archive;
+    if (Response.body) {
+        const Reader = Response.body.getReader();
+        const Chunks = [];
+        let Received = 0, LastReported = -1;
+        for (;;) {
+            const { done: IsDone, value: Chunk } = await Reader.read();
+            if (IsDone) break;
+            Chunks.push(Chunk);
+            Received += Chunk.length;
+        }
+        Archive = new Blob(Chunks, { type: 'application/zip' });
+    } else {
+        Archive = await Response.blob();
+    }
+
+    Translation.Blob        = Archive;
+    Translation.BlobVersion = Version;
+    Translation_Render();
+    return Archive;
+}
+
+UI_TLUpload.addEventListener('click', () => UI_TranslationInput.click());
+UI_TranslationInput.addEventListener('change', () => {
+    Translation.ManualFile = UI_TranslationInput.files[0] || null;
+    Translation_Render();
+    UI_UpdateApplyButton();
+});
+
+function UI_UpdateApplyButton() {
+    const HaveTranslation = !!(Translation.ManualFile || Translation.Version);
+    UI_ApplyButton.disabled = !(UI_ROMInput.files[0] && HaveTranslation);
+}
+
+UI_ROMInput.addEventListener('change', () => {
+    UI_UpdateApplyButton();
+    const SelectedFile = UI_ROMInput.files[0];
+    document.getElementById('romInfo').textContent = SelectedFile
+        ? `${SelectedFile.name} — ${(SelectedFile.size / 1048576).toFixed(1)} MB`
+        : '';
+});
+
+UI_ApplyButton.addEventListener('click', async () => {
+    const ROMFile = UI_ROMInput.files[0];
+    if (!ROMFile) return;
+
+    const RandomizerError = Randomizer_Validate(RandomizerState);
+    if (RandomizerError) {
+        UI_Log('Randomizer Error: ' + RandomizerError);
+        return;
+    }
+
+    UI_ApplyButton.disabled   = true;
+    UI_LogElement.textContent = '';
+    const StartTime = performance.now();
+    try {
+        const TranslationFile = await Translation_Acquire(UI_Log);
+
+        const PatchOptions = {};
+        for (const PatchDef of Patch_Definitions) {
+            PatchOptions[PatchDef.Key] = {
+                On:    UI_PatchState[PatchDef.Key].On,
+                Value: UI_PatchState[PatchDef.Key].Value,
+            };
+        }
+        const Result = await Pipeline_Run(
+            ROMFile, PatchOptions, RandomizerState, TranslationFile, UI_Log
+        );
+        const ElapsedSeconds = ((performance.now() - StartTime) / 1000).toFixed(1);
+        UI_Log(`\n!! Done in ${ElapsedSeconds}s — ${(Result.Rom.size / 1048576).toFixed(2)} MB`);
+        UI_LogDownload(Result.Rom);
+        if (Result.Spoiler) UI_LogSpoilerDownload(Result.Spoiler);
+    } catch (CaughtError) {
+        UI_Log('\nERROR: ' + (CaughtError?.message ?? CaughtError));
+        console.error(CaughtError);
+    } finally {
+        UI_ApplyButton.disabled = false;
+        UI_UpdateApplyButton();
+    }
+});
+
+Translation_Render();
+Translation_LoadVersion();
+</script>
+</body>
+</html>
