@@ -1206,6 +1206,34 @@ async function Apply_GenderIcons(FS, FileMap, Zip, Log) {
     }
 }
 
+async function Apply_MenuGraphics(FS, FileMap, Log) {
+    const TileSize = 32;
+    function PatchNCGR(FileName, JpTile, EnTile, Count, Label) {
+        const Paths = FileMap.get(FileName);
+        if (!Paths || !Paths.length) { Log(`- - ${FileName} not found`); return; }
+        const Data = new Uint8Array(FS.readFile(Paths[0]));
+        let TileBase = -1;
+        for (let i = 0; i <= Data.length - 20; i++) {
+            if (Data[i]      === 0x52 && Data[i + 1]  === 0x47 &&
+                Data[i + 2]  === 0x43 && Data[i + 3]  === 0x4E &&
+                Data[i + 16] === 0x52 && Data[i + 17] === 0x41 &&
+                Data[i + 18] === 0x48 && Data[i + 19] === 0x43) {
+                TileBase = i + 16 + 32;
+                break;
+            }
+        }
+        if (TileBase < 0) { Log(`- - ${FileName}: RGCN block not found`); return; }
+        const Src = TileBase + EnTile * TileSize;
+        const Dst = TileBase + JpTile * TileSize;
+        const Len = Count * TileSize;
+        Data.set(Data.subarray(Src, Src + Len), Dst);
+        FS.writeFile(Paths[0], Data);
+        Log(`- - ${Label} patched`);
+    }
+    PatchNCGR('d2_ObjBattleData.bin',  128, 136, 8, 'MISS! popup');
+    PatchNCGR('d2_ObjNaviMapData.bin', 4,   17,  3, 'Menu button');
+}
+
 function Synth_ReadBinaryTable(Data, TableType) {
     const Records = [];
     if (TableType === '4g') {
@@ -1899,13 +1927,17 @@ async function Pipeline_Run(ROMFile, PatchOptions, RandomizerState, TranslationF
     Log('Inserting Translation...');
     await Translation_Apply(FS, CodepointTable, Zip, Log);
     await UI_Yield();
-    /* ── Phase 3b — data-file operations (icons / synths / randomizer) ── */
+
     const DataFileMap = MEMFS_BuildFileMap(FS, '/data');
     let SpoilerText = null;
     if (PatchOptions.gender_icons?.On) {
         Log('- Inserting polarity icons');
         await Apply_GenderIcons(FS, DataFileMap, Zip, Log);
     }
+	if (PatchOptions.menu_graphics?.On) {
+		Log('- Patching UI graphics');
+		await Apply_MenuGraphics(FS, DataFileMap, Log);
+	}
     if (PatchOptions.new_synths?.On) {
         Log('- Inserting new synthesis recipes');
         await Apply_NewSynths(FS, DataFileMap, Zip, Names, Log);
@@ -1950,7 +1982,7 @@ const Patch_Definitions = [
             return `0x${Value.toString(16)}`;
         },
         Param: {
-            Type: 'hex', Default: 0x37000, Label: 'Size', Note: 'multiple of 0x1000, maximum of 0x40000',
+            Type: 'hex', Default: 0x37000, Label: 'Size', Note: 'multiple of 0x1000',
             Validate: (Value) => Value > 0 && (Value & 0xFFF) === 0,
         },
     },
@@ -1995,6 +2027,13 @@ const Patch_Definitions = [
         Target:    'data',
         DefaultOn: true,
     },
+	{
+		Key:       'menu_graphics',
+		Label:     'Patch UI graphics',
+		Target:    'data',
+		DefaultOn: true,
+		Note:      'Replaces baked JP labels ("ミス!", "メニュー") with their EN tiles',
+	},
     {
         Key:    'xvariant_suffix',
         Label:  'X / XY variant name fix',
