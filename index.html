@@ -1982,7 +1982,7 @@ const Patch_Definitions = [
             return `0x${Value.toString(16)}`;
         },
         Param: {
-            Type: 'hex', Default: 0x37000, Label: 'Size', Note: 'multiple of 0x1000',
+            Type: 'hex', Default: 0x37000, Label: 'Size', Note: 'multiple of 0x1000, maximum of 0x40000',
             Validate: (Value) => Value > 0 && (Value & 0xFFF) === 0,
         },
     },
@@ -2032,7 +2032,7 @@ const Patch_Definitions = [
 		Label:     'Patch UI graphics',
 		Target:    'data',
 		DefaultOn: true,
-		Note:      'Replaces baked JP labels ("ミス!", "メニュー") with their EN tiles',
+		Note:      'Replaces some JP graphics with their EN tiles',
 	},
     {
         Key:    'xvariant_suffix',
