@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MistPatcher: DQMJ2P Translation</title>
+<title>MistPatcher: Traduction DQMJ2P FR</title>
 <script src="/library/jszip.min.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0 }
@@ -121,8 +121,8 @@
 </head>
 <body>
 <div class="card" style="color: #98fabe; border-color: #73c4b3; margin-bottom: .8em;">
-	<h3 style="color: #98fabe;">Dragon Quest Monsters: Joker 2 Professional Web Patcher</h3>
-	<div style="font-size: .9em; font-weight: 500; margin-top: .2em;">Made with &lt;3 by Ceris</div>
+	<h3 style="color: #98fabe;">Patcheur Web Dragon Quest Monsters: Joker 2 Professional</h3>
+	<div style="font-size: .9em; font-weight: 500; margin-top: .2em;">Créé avec &lt;3 par Ceris</div>
 </div>
 <div class="top-row">
   <div class="card card-sm">
@@ -131,12 +131,12 @@
     <div class="file-info" id="romInfo"></div>
   </div>
     <div class="card card-sm tl-card">
-    <h3>Translation Archive</h3>
+    <h3>Archive de traduction</h3>
     <div class="tl-main busy" id="tlMain">Checking&hellip;</div>
     <div class="file-info" id="tlSub"></div>
     <input type="file" id="translationFile" accept=".zip" hidden>
     <button type="button" class="icon-btn" id="tlUpload"
-            title="Use a local .zip instead of the server copy">
+            title="Utiliser un fichier zip local au lieu de la copie du serveur">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
            stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M12 16V4"/><path d="M7 9l5-5 5 5"/>
@@ -146,7 +146,7 @@
   </div>
 </div>
 <div class="tabs">
-  <div class="tab-btn active" data-tab="patches">Patches</div>
+  <div class="tab-btn active" data-tab="patches">Patchs</div>
   <div class="tab-btn" data-tab="randomizer">Randomizer</div>
 </div>
 <div class="card tab-host">
@@ -158,9 +158,9 @@
   </div>
 </div>
 <div class="card warn" style="margin-bottom:.8em;font-size:.85em">
-  <b>Note:</b> Rebuilding the ROM in the browser requires ~512MB of RAM. This may fail on mobile devices.
+  <b>Note:</b> Reconstruire la ROM dans un navigateur requiert environ 512Mo de RAM. Ça peut donc échouer sur certains appareils mobiles.
 </div>
-<button id="applyBtn" disabled>Build ROM</button>
+<button id="applyBtn" disabled>Construire la ROM</button>
 <div id="log"></div>
 <script type="module">
 // Constants
@@ -1158,7 +1158,7 @@ async function Translation_Apply(FS, CodepointTable, Zip, Log) {
             if (WriteToFile(Name, Data)) {
                 SplashCount++;
             } else {
-                Log(`- - ${Name} not present in ROM data`);
+                Log(`- - ${Name} introuvable dans les données de la ROM`);
             }
         } catch (CaughtError) {
             Log(`- - ${Name}: ${CaughtError.message}`);
@@ -1182,27 +1182,27 @@ async function Apply_GenderIcons(FS, FileMap, Zip, Log) {
                 IconTiles[GlyphIndex] = TileData;
                 IconsLoaded++;
             } else {
-                Log(`- - ${FileName}: expected 96 B, got ${TileData.length}`);
+                Log(`- - ${FileName}: s'attendait à 96 B, a eu ${TileData.length}`);
             }
         } catch (CaughtError) {
             Log(`- - ${FileName}: ${CaughtError.message}`);
         }
     }
     if (IconsLoaded !== 3) {
-        Log(`- only ${IconsLoaded}/3 icon tiles — skipping`);
+        Log(`- seulement ${IconsLoaded}/3 icônes — ignoré`);
         return;
     }
     const FontPaths = FileMap.get('font_16x16.NFTR');
     if (!FontPaths || !FontPaths.length) {
-        Log('- font_16x16.NFTR not found');
+        Log('- font_16x16.NFTR introuvable');
         return;
     }
     const PatchedFont = Font_PatchPolarityIcons(FS.readFile(FontPaths[0]), IconTiles);
     if (PatchedFont) {
         FS.writeFile(FontPaths[0], PatchedFont);
-        Log('- polarity icons replaced');
+        Log('- Icônes de polarités remplacées');
     } else {
-        Log('- PLGC block not found');
+        Log('- Bloc PLGC introuvable');
     }
 }
 
@@ -1210,7 +1210,7 @@ async function Apply_MenuGraphics(FS, FileMap, Log) {
     const TileSize = 32;
     function PatchNCGR(FileName, JpTile, EnTile, Count, Label) {
         const Paths = FileMap.get(FileName);
-        if (!Paths || !Paths.length) { Log(`- - ${FileName} not found`); return; }
+        if (!Paths || !Paths.length) { Log(`- - ${FileName} introuvable`); return; }
         const Data = new Uint8Array(FS.readFile(Paths[0]));
         let TileBase = -1;
         for (let i = 0; i <= Data.length - 20; i++) {
@@ -1222,7 +1222,7 @@ async function Apply_MenuGraphics(FS, FileMap, Log) {
                 break;
             }
         }
-        if (TileBase < 0) { Log(`- - ${FileName}: RGCN block not found`); return; }
+        if (TileBase < 0) { Log(`- - ${FileName}: Bloc RGCN introuvable`); return; }
         const Src = TileBase + EnTile * TileSize;
         const Dst = TileBase + JpTile * TileSize;
         const Len = Count * TileSize;
@@ -1328,12 +1328,12 @@ async function Apply_NewSynths(FS, FileMap, Zip, Names, Log) {
     for (const T of Tables) {
         const Paths = FileMap.get(T.File);
         if (!Paths || !Paths.length) {
-            Log(`- - ${T.File} not found — skipping`);
+            Log(`- - ${T.File} introuvable — ignoré`);
             continue;
         }
         const CsvText = await Zip.TryZipText(T.Csv);
         if (CsvText == null) {
-            Log(`- - ${T.Csv} not found — skipping`);
+            Log(`- - ${T.Csv} introuvable — ignoré`);
             continue;
         }
         try {
@@ -1561,7 +1561,7 @@ function Rand_BattleXPOnly(FS, FileMap, Cfg, Rng, Spoiler, Log) {
         if (NewXp !== OldXp) Changed++;
         const V = Math.max(0, Math.min(NewXp, 0xFFFFFF));
         Out[Off + 40] = V & 0xFF; Out[Off + 41] = (V >>> 8) & 0xFF; Out[Off + 42] = (V >>> 16) & 0xFF;
-        Lines.push(`Entry ${String(i + 1).padStart(4, '0')}: Monster ${Id}, XP ${OldXp} -> ${NewXp}`);
+        Lines.push(`Entrée ${String(i + 1).padStart(4, '0')}: Monstre ${Id}, XP ${OldXp} -> ${NewXp}`);
     }
     FS.writeFile(Paths[0], Out);
     Log(`Randomized battle monster XP: ${Changed} entries from ${Num} total`);
@@ -1621,7 +1621,7 @@ function Rand_LevelUp(FS, FileMap, Cfg, Rng, Spoiler, Log) {
             Curves[ci] = NC;
         }
     } else {
-        throw new Error(`Unknown level up randomiser mode: ${Cfg.levelUpMode}`);
+        throw new Error(`Mode de randomization des montées de niveau inconnu: ${Cfg.levelUpMode}`);
     }
     const TotalLen = Header.length + Curves.reduce((s, c) => s + c.length, 0);
     const Out = new Uint8Array(TotalLen);
@@ -1629,16 +1629,16 @@ function Rand_LevelUp(FS, FileMap, Cfg, Rng, Spoiler, Log) {
     let Pos = Header.length;
     for (const C of Curves) { Out.set(C, Pos); Pos += C.length; }
     FS.writeFile(Paths[0], Out);
-    Log(`Randomized LevelUpTbl.bin: mode=${Cfg.levelUpMode}`);
+    Log(`LevelUpTbl.bin Randomizé: mode=${Cfg.levelUpMode}`);
     if (Cfg.generateSpoiler) {
-        Spoiler.add('\n--- Level Up XP Randomisation ---\n' + Lines.join('\n'));
+        Spoiler.add('\n--- Randomization de l\'expérience des montées de niveau ---\n' + Lines.join('\n'));
     }
 }
 function Rand_SkillPoints(FS, FileMap, Cfg, Rng, Spoiler, Log) {
     const Paths = FileMap.get('SkillPointTbl.bin');
     if (!Paths) throw new Error('SkillPointTbl.bin not found');
     const Data = FS.readFile(Paths[0]);
-    if (Data.length !== 100) throw new Error(`SkillPointTbl.bin unexpected size: ${Data.length}`);
+    if (Data.length !== 100) throw new Error(`Taille de SkillPointTbl.bin imprévue: ${Data.length}`);
     let Values = Array.from(Data);
     if (Cfg.skillPointsMode === 'swap') {
         Rng.shuffle(Values);
@@ -1647,13 +1647,13 @@ function Rand_SkillPoints(FS, FileMap, Cfg, Rng, Spoiler, Log) {
         Values = [];
         for (let i = 0; i < 100; i++) Values.push(Rand_WeightedChoice(Rng, Weights));
     } else {
-        throw new Error(`Unknown skill point randomiser mode: ${Cfg.skillPointsMode}`);
+        throw new Error(`Mode de randomization des points de compétence inconnu: ${Cfg.skillPointsMode}`);
     }
     FS.writeFile(Paths[0], Uint8Array.from(Values));
-    Log(`Randomized SkillPointTbl.bin: mode=${Cfg.skillPointsMode}`);
+    Log(`SkillPointTbl.bin randomizé: mode=${Cfg.skillPointsMode}`);
     if (Cfg.generateSpoiler) {
-        const Lines = ['\n--- Skill Point Randomisation ---', `Mode: ${Cfg.skillPointsMode}`];
-        Values.forEach((P, i) => Lines.push(`Level ${i + 1}: ${P} skill points`));
+        const Lines = ['\n--- Randomization des points de compétence ---', `Mode: ${Cfg.skillPointsMode}`];
+        Values.forEach((P, i) => Lines.push(`Niveau ${i + 1}: ${P} points de compétences`));
         Spoiler.add(Lines.join('\n'));
     }
 }
@@ -1661,7 +1661,7 @@ async function Rand_GenericSynthesis(FS, Cfg, Rng, Spoiler, Log) {
     const Ov0Path = '/overlay/overlay_0000.bin';
     let Exists = true;
     try { FS.stat(Ov0Path); } catch { Exists = false; }
-    if (!Exists) { Log('- overlay_0000.bin not found — skipping generic synthesis'); return; }
+    if (!Exists) { Log('- overlay_0000.bin introuvable — Synthèses génériques ignorées'); return; }
     const Overlay0Ram = 0x021D7240;
     const TableRam    = 0x0222E000;
     const TableOff    = TableRam - Overlay0Ram;
@@ -1685,7 +1685,7 @@ async function Rand_GenericSynthesis(FS, Cfg, Rng, Spoiler, Log) {
         Instr & 0xFF, (Instr >>> 8) & 0xFF, (Instr >>> 16) & 0xFF, (Instr >>> 24) & 0xFF,
     ]));
     if (TableOff < 0 || TableOff + (RecordCount + 1) * RecordSize > Dec.length) {
-        throw new Error('Generic synthesis table offset is outside overlay_0000.bin');
+        throw new Error('Le décalage des synthèses génériques est en dehors de overlay_0000.bin');
     }
     for (let i = 0; i < RecordSize; i++) {
         if (Dec[TableOff + RecordCount * RecordSize + i] !== 0xFF) {
@@ -1707,8 +1707,8 @@ async function Rand_GenericSynthesis(FS, Cfg, Rng, Spoiler, Log) {
     const Shuffled = Results.slice();
     Rng.shuffle(Shuffled);
     const SpoilerLines = [
-        '--- Generic Synthesis Randomisation ---', '',
-        '--- Generic Synthesis Result Shift ---',
+        '--- Randmization des synthèses génériques ---', '',
+        '--- Décalage des résultats de synthèse génériques ---',
         `Common selector return shift: +${Shift}`,
         'Known quirk: some SS display text may appear as X.', '',
         'Generic family-pair result table:',
@@ -1726,7 +1726,7 @@ async function Rand_GenericSynthesis(FS, Cfg, Rng, Spoiler, Log) {
         Overlay_UpdateY9(Y9, 0, Comp.length);
         FS.writeFile('/y9.bin', Y9);
     }
-    Log(`Randomized generic synthesis family table: ${RecordCount} rules`);
+    Log(`Randomize les synthèses génériques des tables de famille: ${RecordCount} règles`);
     if (Cfg.generateSpoiler) Spoiler.add(SpoilerLines.join('\n'));
 }
 function Randomizer_AnySelected(S) {
@@ -1738,32 +1738,32 @@ function Randomizer_AnySelected(S) {
 function Randomizer_Validate(S) {
     if (!S.enabled || !Randomizer_AnySelected(S)) return null;
     const Seed = (S.seed || '').trim();
-    if (Seed && isNaN(parseInt(Seed, 10))) return 'Randomizer seed must be a whole number.';
+    if (Seed && isNaN(parseInt(Seed, 10))) return 'La seed du randomizer doit être un nombre entier.';
     if (S.monsters) {
-        if (Object.values(S.ranks).every(v => !v))    return 'At least one monster rank must be allowed.';
-        if (Object.values(S.families).every(v => !v)) return 'At least one monster family must be allowed.';
-        if (Object.values(S.sizes).every(v => !v))    return 'At least one monster size must be allowed.';
+        if (Object.values(S.ranks).every(v => !v))    return 'Au moins un rang de monstre doit être autorisé.';
+        if (Object.values(S.families).every(v => !v)) return 'Au moins une famille de monstre doit être autorisée.';
+        if (Object.values(S.sizes).every(v => !v))    return 'Au moins une taille de monstre doit être autorisée.';
     }
     if (S.level_up_mode !== 'none') {
         const V = parseInt(S.level_up_variance, 10);
-        if (isNaN(V))              return 'Level Up XP variance must be a whole number.';
-        if (V < 100 || V > 300)    return 'Level Up XP variance must be between 100 and 300.';
+        if (isNaN(V))              return 'La variance de l\'EXP de montée de niveau doit être un nombre entier.';
+        if (V < 100 || V > 300)    return 'La variance de l\'EXP de montée de niveau doit être comprise entre 100 et 300.';
     }
     return null;
 }
 function Randomizer_SettingsSummary(S) {
     return [
-        '', '--- Randomiser Settings ---',
-        `- Battle monsters: ${S.monsters ? 'on' : 'off'}`,
-        `- Battle XP rewards: ${S.xp ? 'on' : 'off'}`,
-        `- Spoiler log: ${S.spoiler ? 'on' : 'off'}`,
-        `- Allow Flee/Scout: ${S.allow_flee ? 'on' : 'off'}`,
-        `- Stronger monsters: ${S.stronger ? 'on' : 'off'}`,
-        `- No flee: ${S.no_flee ? 'on' : 'off'}`,
-        `- Level Up XP mode: ${S.level_up_mode}`,
-        `- Level Up XP variance: ${S.level_up_variance}`,
-        `- Skill Points mode: ${S.skill_points_mode}`,
-        `- Generic synthesis: ${S.generic_synthesis ? 'on' : 'off'}`,
+        '', '--- Paramètres du randomizer ---',
+        `- Combats de monstres: ${S.monsters ? 'on' : 'off'}`,
+        `- Récompenses d'EXP: ${S.xp ? 'on' : 'off'}`,
+        `- Fichier de spoilers: ${S.spoiler ? 'on' : 'off'}`,
+        `- Permettre de fuir/dresser: ${S.allow_flee ? 'on' : 'off'}`,
+        `- Monstres plus forts: ${S.stronger ? 'on' : 'off'}`,
+        `- Pas de fuite: ${S.no_flee ? 'on' : 'off'}`,
+        `- Mode de montée de niveau: ${S.level_up_mode}`,
+        `- Variance de l'EXP de montée de niveau: ${S.level_up_variance}`,
+        `- Mode de points de compétence: ${S.skill_points_mode}`,
+        `- Synthèses génériques: ${S.generic_synthesis ? 'on' : 'off'}`,
         '- 0-XP battle entries: always skipped', '',
     ].join('\n');
 }
@@ -1771,7 +1771,7 @@ async function Randomizer_Run(FS, FileMap, Zip, Names, State, Log) {
     let Seed = parseInt((State.seed || '').trim(), 10);
     if (isNaN(Seed) || Seed === 0) Seed = Math.floor(Math.random() * 999999) + 1;
     const Rng = new PRNG(Seed);
-    Log('Running DQMJ2P randomizer...');
+    Log('Lancement du randomizer DQMJ2P...');
     Log(`Seed: ${Seed}`);
     let Catalog = new Map();
     for (const P of [
@@ -1787,7 +1787,7 @@ async function Randomizer_Run(FS, FileMap, Zip, Names, State, Log) {
     const FamilyExcludes = new Set(Object.entries(State.families).filter(([, v]) => !v).map(([k]) => k.toLowerCase()));
     const SizeExcludes   = new Set(Object.entries(State.sizes).filter(([, v]) => !v).map(([k]) => String(k)));
     if (Catalog.size === 0 && (RankExcludes.size || FamilyExcludes.size || SizeExcludes.size)) {
-        Log('- monster_database.csv missing; Cannot filter monsters');
+        Log('- monster_database.csv absente; Impossible de filtrer les monstres');
         RankExcludes.clear(); FamilyExcludes.clear(); SizeExcludes.clear();
     }
     const Cfg = {
@@ -1810,7 +1810,7 @@ async function Randomizer_Run(FS, FileMap, Zip, Names, State, Log) {
         parts: [],
         add(s) { if (this.enabled) this.parts.push(s); },
     };
-    Spoiler.add(`Randomization Seed: ${Seed}`);
+    Spoiler.add(`Seed du Randomizer: ${Seed}`);
     Spoiler.add(Randomizer_SettingsSummary(State));
     if (State.monsters) {
         Rand_BattleMonsters(FS, FileMap, Cfg, Names, Catalog, Rng, Spoiler, Log);
@@ -1857,14 +1857,14 @@ async function Pipeline_Run(ROMFile, PatchOptions, RandomizerState, TranslationF
     }
     await UI_Yield();
 
-    Log('Loading translation archive...');
+    Log('Chargement de l\'archive de traduction...');
     const Zip = await Zip_Open(TranslationFile);
     const NamesText = await Zip.TryZipText('Translation/STRINGS/msg_monstername.txt');
     const Names = NamesText ? NamesText.split('\n').map(l => l.replace(/\r$/, '')) : [];
     await MEMFS_StreamFileToFS(FS, ROMFile, '/rom.nds');
     await UI_Yield();
 
-    Log('Extracting ROM with ndstool...');
+    Log('Extraction de la ROM avec ndstool...');
     MEMFS_MakeDirectorySafe(FS, '/data');
     MEMFS_MakeDirectorySafe(FS, '/overlay');
     NDSTool._logs.length = 0;
@@ -1874,7 +1874,7 @@ async function Pipeline_Run(ROMFile, PatchOptions, RandomizerState, TranslationF
     if (ReturnCode !== 0) throw new Error(`ndstool -x failed (rc=${ReturnCode})`);
     FS.unlink('/rom.nds');
     await UI_Yield();
-    Log('Building patch files...');
+    Log('Construction des fichiers de patch...');
     let CodepointTable = null;
     for (const Target of Pipeline_Targets) {
         const MatchingPatches = Patch_Definitions.filter(
@@ -1886,10 +1886,10 @@ async function Pipeline_Run(ROMFile, PatchOptions, RandomizerState, TranslationF
         try { FS.stat(Target.FilePath); } catch { FileExists = false; }
         if (!FileExists) {
             if (Target.MustExist) {
-                throw new Error(`${Path_BaseName(Target.FilePath)} missing — wrong ROM?`);
+                throw new Error(`${Path_BaseName(Target.FilePath)} absent — mauvaise ROM?`);
             }
             if (MatchingPatches.length) {
-                Log(`- ${Path_BaseName(Target.FilePath)} not found — skipping`);
+                Log(`- ${Path_BaseName(Target.FilePath)} pas trouvé — ignoré`);
             }
             continue;
         }
@@ -1898,7 +1898,7 @@ async function Pipeline_Run(ROMFile, PatchOptions, RandomizerState, TranslationF
             : new Uint8Array(await BLZ_Decompress(FS.readFile(Target.FilePath)));
         if (Target.ExtractTable) {
             CodepointTable = Translation_LoadCodepointTable(DecompressedData);
-            Log('- codepoint table extracted');
+            Log('- table des points de code extraite');
         }
         for (const PatchDef of MatchingPatches) {
             const Result = PatchDef.Apply(
@@ -1924,30 +1924,30 @@ async function Pipeline_Run(ROMFile, PatchOptions, RandomizerState, TranslationF
         DecompressedData = null;
         await UI_Yield();
     }
-    Log('Inserting Translation...');
+    Log('Insertion de la traduction...');
     await Translation_Apply(FS, CodepointTable, Zip, Log);
     await UI_Yield();
 
     const DataFileMap = MEMFS_BuildFileMap(FS, '/data');
     let SpoilerText = null;
     if (PatchOptions.gender_icons?.On) {
-        Log('- Inserting polarity icons');
+        Log('- Insertion des icônes de polarité');
         await Apply_GenderIcons(FS, DataFileMap, Zip, Log);
     }
 	if (PatchOptions.menu_graphics?.On) {
-		Log('- Patching UI graphics');
+		Log('- Changement des graphismes');
 		await Apply_MenuGraphics(FS, DataFileMap, Log);
 	}
     if (PatchOptions.new_synths?.On) {
-        Log('- Inserting new synthesis recipes');
+        Log('- Insertion des nouvelles synthèses');
         await Apply_NewSynths(FS, DataFileMap, Zip, Names, Log);
     }
     if (RandomizerState.enabled && Randomizer_AnySelected(RandomizerState)) {
-        Log('- Applying Randomizer');
+        Log('- Application du Randomizer');
         SpoilerText = await Randomizer_Run(FS, DataFileMap, Zip, Names, RandomizerState, Log);
     }
     await UI_Yield();
-    Log('Building ROM with ndstool...');
+    Log('Construction de la ROM avec ndstool...');
     NDSTool._logs.length = 0;
     NDSTool.ccall('ndstool_reset', null, [], []);
     ReturnCode = WASM_CallSafe(NDSTool, ['-c', '/output.nds', ...NDS_CommonArgs]);
@@ -1974,7 +1974,7 @@ function Patch_FormatMultiplier(Value) {
 const Patch_Definitions = [
     {
         Key:      'grow_msg_pool',
-        Label:    'New message pool size',
+        Label:    'Nouvelle taille de messages',
         Required: true,
         Target:   'arm9',
         Apply: (Data, Value) => {
@@ -1982,13 +1982,13 @@ const Patch_Definitions = [
             return `0x${Value.toString(16)}`;
         },
         Param: {
-            Type: 'hex', Default: 0x37000, Label: 'Size', Note: 'multiple of 0x1000, maximum of 0x40000',
+            Type: 'hex', Default: 0x37000, Label: 'Taille', Note: 'multiple de 0x1000, maximum de 0x40000',
             Validate: (Value) => Value > 0 && (Value & 0xFFF) === 0,
         },
     },
     {
         Key:    'grow_actionhelp',
-        Label:  'ActionHelp patch',
+        Label:  'Patch ActionHelp',
         Target: 'ov1',
         Apply: (Data) => {
             const BranchLink = ARM_EncodeBranchLink(0x02202B68, 0x0205D9E8);
@@ -2001,11 +2001,11 @@ const Patch_Definitions = [
                 Byte_Write32(Data, Offset, Value);
             }
         },
-        Note: 'Currently bugged. Do not enable unless you know what you\'re doing.',
+        Note: 'Bugué. Ne pas activer si vous ne savez pas ce que vous faites.',
     },
     {
         Key:      'antipiracy',
-        Label:    'Anti-piracy patch',
+        Label:    'Patch anti-piratage',
         Required: true,
         Target:   'ov4',
         Apply: (Data) => {
@@ -2016,27 +2016,28 @@ const Patch_Definitions = [
     },
     {
         Key:       'new_synths',
-        Label:     'Add new synthesis recipes',
+        Label:     'Ajout de nouvelles synthèses',
         Target:    'data',
         DefaultOn: true,
-        Note:      'Adds recipes for otherwise-unobtainable monsters',
+        Note:      'Ajoute des synthèses pour les monstres impossibles à avoir sinon',
     },
     {
         Key:       'gender_icons',
-        Label:     'Replace gender icons with polarity (+/-)',
+        Label:     'Remplace les icônes de genres par des icônes de polarité (+/-)',
         Target:    'data',
         DefaultOn: true,
+        Note:      'Comportement de base dans DQMJ2',
     },
 	{
 		Key:       'menu_graphics',
-		Label:     'Patch UI graphics',
+		Label:     'Patcher les images des interfaces',
 		Target:    'data',
 		DefaultOn: true,
-		Note:      'Replaces some JP graphics with their EN tiles',
+		Note:      'Remplace certaines images Jap en leur équivalent EN',
 	},
     {
         Key:    'xvariant_suffix',
-        Label:  'X / XY variant name fix',
+        Label:  'Mettre l\'indicateur X / XY en suffixe',
         Target: 'arm9',
         Apply: (Data) => {
             Byte_Write32(Data, 0x02045028 - ARM9_BaseAddress, 0xEAFFFFFF);
@@ -2059,10 +2060,11 @@ const Patch_Definitions = [
                 Byte_Write32(Data, Offset, Value);
             }
         },
+		Note:      'Dans la version Japonaise, l\'indicateur X / XY est un préfixe',
     },
     {
         Key:    'xp_mult',
-        Label:  'XP multiplier',
+        Label:  'Multiplicateur d\'EXP',
         Target: 'ov1',
         Apply: (Data, Value) => {
             const ShiftAmount = Math.max(-4, Math.min(8, Math.round(Math.log2(Math.max(Value, 1e-9)))));
@@ -2073,13 +2075,13 @@ const Patch_Definitions = [
             return `×${Math.pow(2, ShiftAmount)}`;
         },
         Param: {
-            Type: 'select', Options: Patch_XPSteps, Default: 2, Label: 'Amount',
-            Format: Patch_FormatMultiplier, Note: 'nearest power of 2',
+            Type: 'select', Options: Patch_XPSteps, Default: 2, Label: 'Quantité',
+            Format: Patch_FormatMultiplier, Note: 'Choisir parmi des puissances de 2',
         },
     },
     {
         Key:    'synthesis_level',
-        Label:  'Change minimum synthesis level',
+        Label:  'Changer le niveau minimum des synthèses',
         Target: 'ov0',
         Apply: (Data, Value) => {
             for (const Offset of [0x048B4C, 0x0494E4, 0x0494EC, 0x049A18]) {
@@ -2087,11 +2089,11 @@ const Patch_Definitions = [
             }
             return String(Value);
         },
-        Param: { Type: 'number', Default: 1, Min: 1, Max: 99, Label: 'Level' },
+        Param: { Type: 'number', Default: 10, Min: 1, Max: 99, Label: 'Niveau' },
     },
     {
         Key:    'synthesis_polarity',
-        Label:  'Remove synthesis polarity requirement',
+        Label:  'Retirer les restrictions de genre/polarité des synthèses',
         Target: 'ov0',
         Apply: (Data) => {
             for (const [Offset, Value] of [
@@ -2106,13 +2108,13 @@ const Patch_Definitions = [
     },
     {
         Key:    'scout_offense',
-        Label:  '"Took offense" no longer blocks scouting',
+        Label:  'Permettre de dresser les monstres "vexés"',
         Target: 'ov1',
         Apply: (Data) => { Byte_Write32(Data, 0x021FBAE8 - Overlay_RAMBase, 0xE1A00000); },
     },
     {
         Key:    'scout_penalty',
-        Label:  'Remove "species owned" scouting penalty',
+        Label:  'Retire la pénalité de dressage sur les espèces déjà possédées',
         Target: 'ov1',
         Apply: (Data) => { Byte_Write32(Data, 0x021FA3F8 - Overlay_RAMBase, 0xE3A01001); },
     },
@@ -2144,7 +2146,7 @@ for (const PatchDef of Patch_Definitions) {
 
     const LabelElement       = UI_El('label');
     LabelElement.htmlFor     = Checkbox.id;
-    LabelElement.textContent = PatchDef.Label + (PatchDef.Required ? '  (required)' : '');
+    LabelElement.textContent = PatchDef.Label + (PatchDef.Required ? '  (requis)' : '');
 
     RowElement.append(Checkbox, LabelElement, UI_El('div', 'grow'));
 
@@ -2308,7 +2310,7 @@ function R_Grid(Parent, Key, Items) {
     const Row = UI_El('div', 'row');
     const CB  = UI_El('input');
     CB.type = 'checkbox'; CB.id = 'r_enabled'; CB.checked = RandomizerState.enabled;
-    const LB  = UI_El('label'); LB.htmlFor = 'r_enabled'; LB.textContent = 'Enable Randomiser';
+    const LB  = UI_El('label'); LB.htmlFor = 'r_enabled'; LB.textContent = 'Activer le Randomiser';
     LB.style.fontWeight = '700';
     CB.addEventListener('change', () => {
         RandomizerState.enabled = CB.checked;
@@ -2316,45 +2318,45 @@ function R_Grid(Parent, Key, Items) {
         for (const C of RandomizerControls) C.disabled = Disabled;
     });
     Row.append(CB, LB, R_Info(
-        'The randomiser naturally introduces game instability. E.g. fighting three slimes ' +
-        '(three enemy slots) may become three 3-slot monsters (nine slots), which can crash ' +
-        'the game. For more stable runs, filter out 3-slot monsters, or flee optional battles.'
+        'Le randomiser introduit des instabilités au jeu. Par exemple un combat contre trois gluants ' +
+        '(trois cases d\'ennemis) peut devenir un combat avec 3 monstres de 3 cases (9 cases au total) ' +
+        'ce qui peut faire planter le jeu. Pour plus de stabilité, filtrez les monstres de 3 cases ou fuyez les combats optionels.'
     ));
     RandomizerListEl.append(Row);
 })();
-R_Heading(RandomizerListEl, 'Monsters');
-R_Check(RandomizerListEl, 'monsters', 'Randomise battle monsters');
-R_Check(RandomizerListEl, 'spoiler', 'Generate spoiler log');
-R_Check(RandomizerListEl, 'generic_synthesis', 'Randomise synthesis recipes',
+R_Heading(RandomizerListEl, 'Monstres');
+R_Check(RandomizerListEl, 'monsters', 'Randomizer les ennemis en combat');
+R_Check(RandomizerListEl, 'spoiler', 'Créer un fichier de spoilers');
+R_Check(RandomizerListEl, 'generic_synthesis', 'Randomizer les recettes de synthèses',
     '??? family results are sometimes not synthesisable and may crash when viewed. ' +
     'If you see synthesis results with no name displayed, avoid selecting/viewing them.');
-R_Check(RandomizerListEl, 'allow_flee', 'Allow Flee/Scout for randomised battles');
-R_Check(RandomizerListEl, 'no_flee', 'No flee challenge');
-R_Check(RandomizerListEl, 'stronger', 'Stronger randomised monsters (150% stats)');
-R_TextNum(RandomizerListEl, 'seed', 'Seed (0 = random)', 'text');
-R_Heading(RandomizerListEl, 'Level Up XP');
-R_Check(RandomizerListEl, 'xp', 'Randomise battle XP rewards');
+R_Check(RandomizerListEl, 'allow_flee', 'Permettre de fuir/dresser dans les combats randomizés');
+R_Check(RandomizerListEl, 'no_flee', 'Challenge: Pas de fuite');
+R_Check(RandomizerListEl, 'stronger', 'Monstres randomizés plus forts (stats ×1,5)');
+R_TextNum(RandomizerListEl, 'seed', 'Seed (0 = aléatoire)', 'text');
+R_Heading(RandomizerListEl, 'EXP de niveau');
+R_Check(RandomizerListEl, 'xp', 'Randomizer l\'EXP des combats');
 R_Radio(RandomizerListEl, 'level_up_mode', [
-    ['Do not randomise level XP', 'none'],
-    ['Swap XP curves', 'swap'],
-    ['Randomise XP curves', 'random'],
+    ['Ne pas randomizer l\'EXP', 'none'],
+    ['Échanger les courbes d\'EXP', 'swap'],
+    ['Randomizer les courbes d\'EXP', 'random'],
 ]);
-R_TextNum(RandomizerListEl, 'level_up_variance', 'XP variance % (100–300)', 'number');
-R_Heading(RandomizerListEl, 'Skill Points');
+R_TextNum(RandomizerListEl, 'level_up_variance', 'Pourcentage de variance d\'EXP (100–300)', 'number');
+R_Heading(RandomizerListEl, 'Paliers de points de compétence');
 R_Radio(RandomizerListEl, 'skill_points_mode', [
-    ['Do not randomise skill points', 'none'],
-    ['Swap skill point levels', 'swap'],
-    ['Randomise skill points', 'random'],
+    ['Ne pas randomizer les paliers de points de compétence', 'none'],
+    ['Échanger les paliers de points de compétence', 'swap'],
+    ['Randomizer les paliers de points de compétence', 'random'],
 ]);
-R_Heading(RandomizerListEl, 'Battle monster replacement filters');
-R_SubLabel(RandomizerListEl, 'Allowed ranks:');
+R_Heading(RandomizerListEl, 'Filtres de remplacement des monstres');
+R_SubLabel(RandomizerListEl, 'Rangs autorisés:');
 R_Grid(RandomizerListEl, 'ranks',
-    ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS'].map(r => [r, r]));
-R_SubLabel(RandomizerListEl, 'Allowed families:');
+    [['F','F'], ['E','E'], ['D','D'], ['C','C'], ['B','B'], ['A','A'], ['S','S'], ['SS','X']]);
+R_SubLabel(RandomizerListEl, 'Familles autorisées:');
 R_Grid(RandomizerListEl, 'families',
-    ['Slime', 'Dragon', 'Nature', 'Beast', 'Material', 'Demon', 'Zombie', '???'].map(f => [f, f]));
-R_SubLabel(RandomizerListEl, 'Allowed sizes:');
-R_Grid(RandomizerListEl, 'sizes', [['1', '1-slot'], ['2', '2-slot'], ['3', '3-slot']]);
+    [['Slime','Gluant'], ['Dragon','Dragon'], ['Nature','Naturel'], ['Beast','Bête'], ['Material','Matériel'], ['Demon','Démon'], ['Zombie','Mort-vivant'], ['???','???']]);
+R_SubLabel(RandomizerListEl, 'Tailles autorisées:');
+R_Grid(RandomizerListEl, 'sizes', [['1', '1 case'], ['2', '2 cases'], ['3', '3 cases']]);
 for (const C of RandomizerControls) C.disabled = !RandomizerState.enabled;
 
 for (const Btn of document.querySelectorAll('.tab-btn')) {
@@ -2380,10 +2382,10 @@ function UI_LogDownload(OutputBlob) {
     const LinkElement       = document.createElement('a');
     LinkElement.href        = UI_LastDownloadURL;
     LinkElement.download    = RandomizerState.enabled && Randomizer_AnySelected(RandomizerState)
-        ? 'DQMJ2P_Patched_Randomised.nds'
-        : 'DQMJ2P_Patched.nds';
+        ? 'DQMJ2P_Patch_FR_Randomizer.nds'
+        : 'DQMJ2P_Patch_FR.nds';
     LinkElement.className   = 'dl';
-    LinkElement.textContent = '⬇  Download patched ROM';
+    LinkElement.textContent = '⬇  Télécharger la ROM patchée';
     UI_LogElement.appendChild(LinkElement);
     UI_LogElement.appendChild(document.createTextNode('\n'));
     UI_LogElement.scrollTop = 1e9;
@@ -2393,9 +2395,9 @@ function UI_LogSpoilerDownload(Text) {
     UI_LastSpoilerURL = URL.createObjectURL(new Blob([Text], { type: 'text/plain' }));
     const LinkElement       = document.createElement('a');
     LinkElement.href        = UI_LastSpoilerURL;
-    LinkElement.download    = 'randomizer_spoiler.txt';
+    LinkElement.download    = 'randomizer_spoilers.txt';
     LinkElement.className   = 'dl';
-    LinkElement.textContent = '⬇  Download spoiler log';
+    LinkElement.textContent = '⬇  Télécharger le fichier de spoilers';
     UI_LogElement.appendChild(LinkElement);
     UI_LogElement.appendChild(document.createTextNode('\n'));
     UI_LogElement.scrollTop = 1e9;
@@ -2428,11 +2430,11 @@ function Translation_Render() {
 
     if (Translation.ManualFile) {
         const F = Translation.ManualFile;
-        UI_TLMain.textContent = 'Local file';
+        UI_TLMain.textContent = 'Fichier local';
         UI_TLSub.textContent  = `${F.name} — ${UI_FormatBytes(F.size)} · `;
         const Reset = UI_El('button', 'tl-reset');
         Reset.type        = 'button';
-        Reset.textContent = 'use server copy';
+        Reset.textContent = 'utilise la copie du serveur';
         Reset.addEventListener('click', () => {
             Translation.ManualFile    = null;
             UI_TranslationInput.value = '';
@@ -2451,8 +2453,8 @@ function Translation_Render() {
         UI_TLMain.append(VerSpan);
     } else {
         UI_TLMain.className   = 'tl-main err';
-        UI_TLMain.textContent = 'Server copy unavailable';
-        UI_TLSub.textContent  = 'Upload a .zip manually →';
+        UI_TLMain.textContent = 'Copie du serveur indisponible';
+        UI_TLSub.textContent  = 'Ajoutez une archive .zip manuellement →';
     }
 }
 
@@ -2461,10 +2463,10 @@ async function Translation_LoadVersion() {
         const Response = await fetch('/version', { cache: 'no-store' });
         if (!Response.ok) throw new Error('HTTP ' + Response.status);
         const Version = (await Response.text()).trim();
-        if (!Version) throw new Error('empty version');
+        if (!Version) throw new Error('version absente');
         Translation.Version = Version;
     } catch (CaughtError) {
-        console.error('version check failed', CaughtError);
+        console.error('echec de vérification de version', CaughtError);
         Translation.Version = null;
     }
     Translation_Render();
@@ -2474,19 +2476,19 @@ async function Translation_LoadVersion() {
 
 async function Translation_Acquire(Log) {
     if (Translation.ManualFile) {
-        Log(`Using uploaded archive: ${Translation.ManualFile.name}`);
+        Log(`Utilisation de l'archive : ${Translation.ManualFile.name}`);
         return Translation.ManualFile;
     }
     const Version = Translation.Version ?? await Translation_LoadVersion();
     if (!Version) {
-        throw new Error('Could not reach the translation server — upload a .zip manually.');
+        throw new Error('Impossible d\'accéder au serveur de traductions. — Veuillez ajouter une archive .zip manuellement.');
     }
     if (Translation.Blob && Translation.BlobVersion === Version) {
-        Log(`Translation archive ${Version} already loaded.`);
+        Log(`Archive de traduction ${Version} déjà chargée.`);
         return Translation.Blob;
     }
 
-    Log(`Pulling archive from server (${Version})...`);
+    Log(`Récupération de l'archive depuis le serveur (${Version})...`);
     const Response = await fetch(`/archive/${Version}.zip`);
     if (!Response.ok) throw new Error(`/archive → HTTP ${Response.status}`);
 
@@ -2538,7 +2540,7 @@ UI_ApplyButton.addEventListener('click', async () => {
 
     const RandomizerError = Randomizer_Validate(RandomizerState);
     if (RandomizerError) {
-        UI_Log('Randomizer Error: ' + RandomizerError);
+        UI_Log('Erreur Randomizer: ' + RandomizerError);
         return;
     }
 
@@ -2559,11 +2561,11 @@ UI_ApplyButton.addEventListener('click', async () => {
             ROMFile, PatchOptions, RandomizerState, TranslationFile, UI_Log
         );
         const ElapsedSeconds = ((performance.now() - StartTime) / 1000).toFixed(1);
-        UI_Log(`\n!! Done in ${ElapsedSeconds}s — ${(Result.Rom.size / 1048576).toFixed(2)} MB`);
+        UI_Log(`\n!! Effectué en ${ElapsedSeconds}s — ${(Result.Rom.size / 1048576).toFixed(2)} MB`);
         UI_LogDownload(Result.Rom);
         if (Result.Spoiler) UI_LogSpoilerDownload(Result.Spoiler);
     } catch (CaughtError) {
-        UI_Log('\nERROR: ' + (CaughtError?.message ?? CaughtError));
+        UI_Log('\nERREUR: ' + (CaughtError?.message ?? CaughtError));
         console.error(CaughtError);
     } finally {
         UI_ApplyButton.disabled = false;

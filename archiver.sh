@@ -1,11 +1,11 @@
 #!/bin/bash
 
 # Configuration
-REPO_API="https://api.github.com/repos/saneezore07/DQMJ2Pro_Translation/commits/master"
-REPO_URL="https://github.com/saneezore07/DQMJ2Pro_Translation/archive"
+REPO_API="https://api.github.com/repos/p0chilla/DQMJ2Pro_Translation_FR/commits/traduction-francaise"
+REPO_URL="https://github.com/p0chilla/DQMJ2Pro_Translation_FR/archive"
 VERSION_FILE="version"
 ARCHIVE_DIR="./archive"
-SLEEP_INTERVAL=1800 # 30 minutes in seconds
+SLEEP_INTERVAL=86400 # 24 hours in seconds
 
 # Ensure the destination directory exists
 mkdir -p "$ARCHIVE_DIR"
@@ -20,7 +20,7 @@ else
 fi
 
 echo "Starting GitHub repo monitor..."
-echo "Checking every 30 minutes. Press [CTRL+C] to stop."
+echo "Checking every 24 hours. Press [CTRL+C] to stop."
 
 while true; do
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] Checking for updates..."

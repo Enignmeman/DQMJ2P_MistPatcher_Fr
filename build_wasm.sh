@@ -49,6 +49,7 @@ emcc \
   -s EXPORT_NAME=createNDSTool \
   -s INITIAL_MEMORY=33554432 \
   -s MAXIMUM_MEMORY=134217728 \
-  -s EXPORTED_FUNCTIONS='["_main","_ndstool_reset"]'
+  -s EXPORTED_FUNCTIONS='["_main","_ndstool_reset"]'\
+  -s DEFAULT_TO_CXX
 
 echo "=== done -> $OUT/{blz,ndstool}.{mjs,wasm} ==="

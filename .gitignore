@@ -1,0 +1,6 @@
+library/*
+ndstools/*
+wasm/*
+archive/*
+
+!ndstools/source/wasm_shim.cpp

@@ -1,16 +1,28 @@
-## To use:
+# README Français
+> Ce dépôt est un fork de https://github.com/CerisWhite/DQMJ2P_MistPatcher, modifié pour appliquer la traduction française pour DQMJ2Pro au lieu de la trad anglaise, avec une interface en français
 
-1.) Create the `library/` directory. Download JSZip to `library/`. I used https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js
+## Utilisation:
 
-2.) Download the ndstool source from https://github.com/devkitpro/ndstool and put it into the ndstool folder. wasm_shim.cpp needs to be with all of the other source files
+1.) Téléchargez JSZip et mettez-le dans `library/`. Utilisez https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js
 
-3.) Install emscripten to compile WASM https://emscripten.org/docs/getting_started/downloads.html
+2.) Téléchargez le code source de ndstool depuis https://github.com/devkitpro/ndstool et mettez-le dans le dossier `ndstool/`. `wasm_shim.cpp` doit être avec les autres fichiers de ce code source.
 
-4.) After installing emscripten, run `build_wasm.sh`
+3.) Installez emscripten (servira à compiler WASM): https://emscripten.org/docs/getting_started/downloads.html
 
-5.) Run the page using an HTTP server. I use python's built-in option most of the time. `python -m http.server -b 127.0.0.1`
+4.) Après l'installation de emscripten, lancez `build_wasm.sh`
 
-6.) ???
+5.) Faites fonctionner la page via un serveur HTTP. (L'option intégrée de Python fonctionne pour tester localement: `python -m http.server -b 127.0.0.1`)
+
+
+## Notes
+
+- Ce patcheur est prévu à la base pour la traduction anglaise actuelle, qui a plus de fonctionalités pratiques que la traduction française actuelle.
+
+- Actuellement, la bannière custom de la trad anglaise est celle qui est appliquée, au lieu de celle de la trad française.
+
+- Contrairement à la version de CerisWhite, il n'y a pas de site web public disponible actuellement indiqué dans la description du dépot.
+
+- Le délai pour le script `archiver.sh` ayant pour but de vérifier les MàJ du dépot de la traduction française est à une vérification toutes les 24h.
 
 ## The server
 
