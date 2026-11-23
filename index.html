@@ -2039,6 +2039,7 @@ const Patch_Definitions = [
         Key:    'xvariant_suffix',
         Label:  'Mettre l\'indicateur X / XY en suffixe',
         Target: 'arm9',
+        DefaultOn: true,
         Apply: (Data) => {
             Byte_Write32(Data, 0x02045028 - ARM9_BaseAddress, 0xEAFFFFFF);
             const InstructionWords = [

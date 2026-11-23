@@ -1,6 +1,7 @@
 library/*
-ndstools/*
+ndstool/*
+ndstool/
 wasm/*
 archive/*
 
-!ndstools/source/wasm_shim.cpp
+!ndstool/source/wasm_shim.cpp

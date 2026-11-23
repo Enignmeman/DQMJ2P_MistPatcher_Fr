@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Configuration
-REPO_API="https://api.github.com/repos/p0chilla/DQMJ2Pro_Translation_FR/commits/traduction-francaise"
-REPO_URL="https://github.com/p0chilla/DQMJ2Pro_Translation_FR/archive"
+REPO_API="https://api.github.com/repos/Enignmeman/DQMJ2Pro_Translation_FR/commits/corrections-FR"
+REPO_URL="https://github.com/Enignmeman/DQMJ2Pro_Translation_FR/archive"
 VERSION_FILE="version"
 ARCHIVE_DIR="./archive"
 SLEEP_INTERVAL=86400 # 24 hours in seconds
