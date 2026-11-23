@@ -50,9 +50,14 @@ while true; do
             
             # 3. Download successful: overwrite version file
             echo "$LATEST_SHA" > "$VERSION_FILE"
+
+            # 4. Delete previous zip file
+            rm -f "${ARCHIVE_DIR}/${CURRENT_VERSION}.zip"
+            echo "Previous version deleted."
             
-            # 4. Update the in-memory variable to skip future downloads
+            # 5. Update the in-memory variable to skip future downloads
             CURRENT_VERSION="$LATEST_SHA"
+            echo "Update successful."
         else
             echo "Failed to download the zip file."
         fi
@@ -60,6 +65,6 @@ while true; do
         echo "No updates found. In-memory version is up to date."
     fi
 
-    # Sleep for 30 minutes
+    # Sleep for 24 hours
     sleep $SLEEP_INTERVAL
 done

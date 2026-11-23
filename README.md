@@ -18,7 +18,7 @@
 
 - Ce patcheur est prévu à la base pour la traduction anglaise actuelle, qui a plus de fonctionalités pratiques que la traduction française actuelle.
 
-- Actuellement, la bannière custom de la trad anglaise est celle qui est appliquée, au lieu de celle de la trad française.
+- ~~Actuellement, la bannière custom de la trad anglaise est celle qui est appliquée, au lieu de celle de la trad française.~~ Problème réglé via l'utilisation d'un fork de la traduction française.
 
 - Contrairement à la version de CerisWhite, il n'y a pas de site web public disponible actuellement indiqué dans la description du dépot.
 
