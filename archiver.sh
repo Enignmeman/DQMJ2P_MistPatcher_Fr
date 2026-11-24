@@ -5,7 +5,7 @@ REPO_API="https://api.github.com/repos/saneezore07/DQMJ2Pro_Translation/commits/
 REPO_URL="https://github.com/saneezore07/DQMJ2Pro_Translation/archive"
 VERSION_FILE="version"
 ARCHIVE_DIR="./archive"
-SLEEP_INTERVAL=1800 # 30 minutes in seconds
+SLEEP_INTERVAL=86400 # 24 hours in seconds
 
 # Ensure the destination directory exists
 mkdir -p "$ARCHIVE_DIR"
@@ -20,7 +20,7 @@ else
 fi
 
 echo "Starting GitHub repo monitor..."
-echo "Checking every 30 minutes. Press [CTRL+C] to stop."
+echo "Checking every 24 hours. Press [CTRL+C] to stop."
 
 while true; do
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] Checking for updates..."
@@ -50,9 +50,14 @@ while true; do
             
             # 3. Download successful: overwrite version file
             echo "$LATEST_SHA" > "$VERSION_FILE"
+
+            # 4. Delete previous zip file
+            rm -f "${ARCHIVE_DIR}/${CURRENT_VERSION}.zip"
+            echo "Previous version deleted."
             
-            # 4. Update the in-memory variable to skip future downloads
+            # 5. Update the in-memory variable to skip future downloads
             CURRENT_VERSION="$LATEST_SHA"
+            echo "Update successful."
         else
             echo "Failed to download the zip file."
         fi
@@ -60,6 +65,6 @@ while true; do
         echo "No updates found. In-memory version is up to date."
     fi
 
-    # Sleep for 30 minutes
+    # Sleep for 24 hours
     sleep $SLEEP_INTERVAL
 done
